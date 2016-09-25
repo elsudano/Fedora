@@ -156,6 +156,9 @@ _isroot=false
       alias git=hub
     fi
   #}}}
+	# GIT COMMANDS{{{
+		alias commit='git commit --allow-empty -am ""'
+	#}}}
   # AUTOCOLOR {{{
     alias ls='ls --color=auto'
     alias dir='dir --color=auto'
