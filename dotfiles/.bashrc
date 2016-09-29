@@ -202,11 +202,7 @@ _isroot=false
         echo "  a, [add] <files> [--all]                            # Add git files"
         echo "  c, [commit] <text> [--undo]                         # Add git files"
         echo "  C, [cherry-pick] <number> <url> [branch]            # Cherry-pick commit"
-<<<<<<< HEAD
-        echo "  s, [pull upstream] <url repo> [init_day]            # Sync master branch repo with the original repo"
-=======
-        echo "  s, [pull upstream] <url repo>                       # Sync master branch repo with the original repo"
->>>>>>> ed266590ae1e1dd6fbb4657cd950b4a66bcdcfdc
+        echo "  s, [pull upstream] <url repo|init_day|message>      # Sync master branch repo with the original repo"
         echo "  b, [branch] list|feature|hotfix|<name>              # Add/Change Branch"
         echo "  d, [delete] <branch>                                # Delete Branch"
         echo "  l, [log]                                            # Display Log"
