@@ -1,24 +1,9 @@
-# .bashrc
-
-# Source global definitions
-if [ -f /etc/bashrc ]; then
-	. /etc/bashrc
-fi
-
-# Uncomment the following line if you don't like systemctl's auto-paging feature:
-# export SYSTEMD_PAGER=
-
-# uncomment for a colored prompt, if the terminal has the capability; turned
-# off by default to not distract the user: the focus in a terminal window
-# should be on the output of commands, not on the prompt
-force_color_prompt=yes
-
 # OVERALL CONDITIONALS {{{
 _islinux=false
 [[ "$(uname -s)" =~ Linux|GNU|GNU/* ]] && _islinux=true
 
-_isfedora=false
-[[ -f /etc/fedora-release ]] && _isfedora=true
+_isarch=false
+[[ -f /etc/arch-release ]] && _isarch=true
 
 _isxrunning=false
 [[ -n "$DISPLAY" ]] && _isxrunning=true
@@ -49,8 +34,9 @@ _isroot=false
       [[ $UID == 0 ]] && echo "#" || echo "\$"
     }
 
-    if [[ $PS1 && -f /usr/share/git-core/contrib/completion/git-prompt.sh ]]; then
-      source /usr/share/git-core/contrib/completion/git-prompt.sh
+    if [[ $PS1 && -f /usr/share/git/git-prompt.sh ]]; then
+      source /usr/share/git/completion/git-completion.bash
+      source /usr/share/git/git-prompt.sh
 
       export GIT_PS1_SHOWDIRTYSTATE=1
       export GIT_PS1_SHOWSTASHSTATE=1
@@ -156,9 +142,9 @@ _isroot=false
       alias git=hub
     fi
   #}}}
-	# GIT COMMANDS{{{
-		alias commit='git commit --allow-empty -am ""'
-	#}}}
+  # GIT COMMANDS{{{
+    alias commit='git commit --allow-empty -am ""'
+  #}}}
   # AUTOCOLOR {{{
     alias ls='ls --color=auto'
     alias dir='dir --color=auto'
@@ -216,7 +202,8 @@ _isroot=false
         echo "  a, [add] <files> [--all]                            # Add git files"
         echo "  c, [commit] <text> [--undo]                         # Add git files"
         echo "  C, [cherry-pick] <number> <url> [branch]            # Cherry-pick commit"
-        echo "  b, [branch] feature|hotfix|<name>                   # Add/Change Branch"
+        echo "  s, [pull upstream] <url repo>                       # Sync master branch repo with the original repo"
+        echo "  b, [branch] list|feature|hotfix|<name>              # Add/Change Branch"
         echo "  d, [delete] <branch>                                # Delete Branch"
         echo "  l, [log]                                            # Display Log"
         echo "  m, [merge] feature|hotfix|<name> <commit>|<version> # Merge branches"
@@ -271,6 +258,9 @@ _isroot=false
         b | branch )
           check_branch=`git branch | grep $2`
           case $2 in
+            l | list)
+              git branch -a
+              ;;
             feature)
               check_unstable_branch=`git branch | grep unstable`
               if [[ -z $check_unstable_branch ]]; then
@@ -311,6 +301,19 @@ _isroot=false
           git cherry-pick $1
           git log
           git branch -D patch
+          ;;
+        s )
+          check_remote_branch=`git branch -a | grep upstream`
+          if [[ -z $check_remote_branch ]]; then
+              if [[ -z "$2" ]]; then
+                echo "original remote repo missing"
+              else
+                git remote add upstream $2
+                git pull upstream master
+              fi
+          else
+              git pull upstream master
+          fi
           ;;
         d | delete)
           check_branch=`git branch | grep $2`
