@@ -34,10 +34,20 @@ _isroot=false
       [[ $UID == 0 ]] && echo "#" || echo "\$"
     }
 
-    if [[ $PS1 && -f /usr/share/git/git-prompt.sh ]]; then
-      source /usr/share/git/completion/git-completion.bash
-      source /usr/share/git/git-prompt.sh
+    # PS1 según el sistema operativo
+    if [[ $PS1 && -f /usr/share/git-core/contrib/completion/git-prompt.sh ]]; then
+        source /usr/share/git-core/contrib/completion/git-completion.bash
+        source /usr/share/git-core/contrib/completion/git-prompt.sh
+        PS1_git=true
+    elif [[ $PS1 && -f /usr/share/git/git-prompt.sh ]]; then
+        source /usr/share/git/completion/git-completion.bash
+        source /usr/share/git/git-prompt.sh
+        PS1_git=true
+    else
+        PS1_git=false
+    fi
 
+    if [[ "$PS1_git" = true ]]; then
       export GIT_PS1_SHOWDIRTYSTATE=1
       export GIT_PS1_SHOWSTASHSTATE=1
       export GIT_PS1_SHOWUNTRACKEDFILES=0
