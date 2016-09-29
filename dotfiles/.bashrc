@@ -305,29 +305,28 @@ _isroot=false
         s )
           check_remote_branch=`git branch -a | grep upstream`
           if [[ -z $check_remote_branch ]]; then
-              if [[ -z "$2" ]]; then
-                echo "original remote repo missing"
-              else
-                git remote add upstream $2
-                git pull upstream master
-                git add .
-                git commit -am "Sincronizo los repos locales y remotos antes de empezar"
-              fi
+            if [[ -z "$2" ]]; then
+              echo "original remote repo missing"
+            else
+              git remote add upstream $2
+              git pull upstream master
+              git add .
+              git commit -am "Sincronizo los repos locales y remotos antes de empezar"
+            fi
           else
             if [[ $2 == init_day ]]; then
               git pull upstream master
               git add .
               git commit -am "Sincronizo los repos locales y remotos antes de empezar"
-            elif [[ -z "$2" ]]; then
+              git push
+            elif [[ -n "$2" ]]; then
               git pull upstream master
               git add .
               git commit -am $2
+              git push
             else
               git pull upstream master
             fi
-              fi
-          else
-              git pull upstream master
           fi
           ;;
         d | delete)
