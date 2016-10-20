@@ -80,6 +80,14 @@ _isroot=false
   if [[ -d "$HOME/bin" ]] ; then
       PATH="$HOME/bin:$PATH"
   fi
+  # HEROKU {{{
+    if which ruby &>/dev/null; then
+      HERO_DIR="/usr/local/heroku/bin"
+      if [[ -d "$HERO_DIR" ]]; then
+        export PATH=$HERO_DIR:$PATH
+      fi
+    fi
+  #}}}
   # RUBY {{{
     if which ruby &>/dev/null; then
       GEM_DIR=$(ruby -rubygems -e 'puts Gem.user_dir')/bin
