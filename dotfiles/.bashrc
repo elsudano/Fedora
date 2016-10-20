@@ -322,14 +322,16 @@ _isroot=false
           ;;
         s )
           check_remote_branch=`git branch -a | grep upstream`
+          #REGEX=`((git|ssh|http(s)?)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?`
           if [[ -z $check_remote_branch ]]; then
-            if [[ -z "$2" ]]; then
-              echo "original remote repo missing"
+            if [[ -n "$2" && $2 =~ $REGEX ]]; then
+              echo "la cadena es un repositorio"
+              #git remote add upstream $2
+              #git pull upstream master
+              #git add .
+              #git commit -am "Sincronizo los repos locales y remotos antes de empezar"
             else
-              git remote add upstream $2
-              git pull upstream master
-              git add .
-              git commit -am "Sincronizo los repos locales y remotos antes de empezar"
+              echo "original remote repo missing"
             fi
           else
             if [[ $2 == init_day ]]; then
