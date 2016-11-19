@@ -182,7 +182,7 @@ _isroot=false
     alias mkdir='mkdir -p -v'
     alias more='less'
     alias nano='nano -w'
-    alias ping='ping -c 5'
+    #alias ping='ping -c 5'
   #}}}
   # PRIVILEGED ACCESS {{{
     if ! $_isroot; then
