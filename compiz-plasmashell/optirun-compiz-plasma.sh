@@ -44,23 +44,52 @@ echo $retval;
 
 #---------------------------------------------Función de inicio-------------------------------------------------
 function start(){
-    killall plasmashell;
+    killall plasmashell
     sleep 1;
-    systemctl start bumblebeed.service;
+    sudo -u usuario systemctl start bumblebeed.service
     sleep 1;
-    optirun plasmashell &;
+    optirun plasmashell &
+    optirun owncloud &
+    optirun kwalletmanager5 &
+    sudo vncserver-x11-serviced
     sleep 1;
-    compiz ccp --replace --sm-disable --ignore-desktop-hints;
-    fusion-icon;
+    compiz ccp --replace --sm-disable --ignore-desktop-hints &
+    fusion-icon &
+    yakuake &
 }
 
 #---------------------------------------------Función de parada-------------------------------------------------
 function stop(){
-    killall plasmashell;
-    sleep 1;
-    killall compiz;
-    sleep 1;
-    systemctl stop bumblebeed.service;
+    killall compiz
+    killall fusion-icon
+    killall emerald
+    killall owncloud
+    killall kwalletmanager5
+    sudo -u usuario systemctl stop bumblebeed.service
+    sleep 2;
+    sudo -u usuario reboot
+
+}
+
+#---------------------------------------------Función para reiniciar-------------------------------------------
+function restart(){
+	killall plasmashell
+	killall compiz
+	killall fusion-icon
+	killall emerald
+	killall owncloud
+	killall kwalletmanager5
+	killall yakuake
+	sudo -u usuario systemctl restart bumblebeed.service
+	sleep 1;
+	optirun plasmashell &
+	optirun owncloud &
+	optirun kwalletmanager5 &
+	sudo vncserver-x11-serviced
+	sleep 1;
+	compiz ccp --replace --sm-disable --ignore-desktop-hints &
+	fusion-icon &
+	yakuake &
 }
 
 #----------------------------------------MAIN-------------------------------------------------------------------------
@@ -70,7 +99,7 @@ if [[ $1 == "--help" || $1 == "-h" || $1 == "" ]]; then
 	#echo "and mode auto is: $0 [auton|autoff]";
 	echo;
 else
-    if [ $(whoami) == "root" ]; then
+    #if [ $(whoami) == "root" ]; then
     	if [ "$(comprobar)" == "0" ]; then
     		if [[ $1 != "" ]]; then
     			COMANDO=$1;
@@ -91,9 +120,9 @@ else
     	else
     		echo "Falta un ejecutable"
     	fi
-    else
-        echo
-        echo "Es necesario ser root para ejecutar esta orden"
-        echo
-    fi
+    #else
+    #    echo
+    #    echo "Es necesario ser root para ejecutar esta orden"
+    #    echo
+    #fi
 fi
