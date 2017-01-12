@@ -105,16 +105,15 @@ else
     			COMANDO=$1;
     		fi
     		if [[ $COMANDO == "stop" ]]; then
-                stop;
-                echo "plasmashell se ha cerrado, compiz también y bumblebeed se ha detenido como servicio"
+                	stop;
+                	echo "plasmashell se ha cerrado, compiz también y bumblebeed se ha detenido como servicio"
     		fi
     		if [[ $COMANDO == "start" ]]; then
-                start;
+                	start;
     			echo "Compiz, plasmashell y Gráfica dedicada iniciados"
     		fi
-            if [[ $COMANDO == "restart" ]]; then
-                stop;
-                start;
+            	if [[ $COMANDO == "restart" ]]; then
+                	restart;
     			echo "Programas reiniciados"
     		fi
     	else
