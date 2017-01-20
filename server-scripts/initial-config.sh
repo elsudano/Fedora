@@ -18,6 +18,7 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
 ISSUE_FILE=/etc/issue
+PORT_COCKPIT_FILE=/etc/systemd/system/cockpit.socket.d/listen.conf
 
 # FUNCIONES
 
@@ -47,6 +48,11 @@ function is_root {
 function create_user() {
     echo "Indique el usuario que desea crear"
     pause --with-msg;
+}
+
+function selinux_disable() {
+    echo "Deshabilitando el SELinux"
+    
 }
 
 # Función para mostrar y comprobar cuales son las direcciones IP
@@ -122,6 +128,19 @@ function issue_msg() {
 
 }
 
+# Función que cambia el puerto de administración de cockpit al que quiere el usuario
+function change_cockpit_port() {
+    read -p "Que puerto desea: " PORT
+    if [ -e $PORT_COCKPIT_FILE ];then
+        rm $PORT_COCKPIT_FILE
+    fi
+    # esto lo tienes que poner para que se reconozca de manera automatica
+    mkdir /etc/systemd/system/cockpit.socket.d
+    echo -e "[Socket]\n\rListenStream=\n\rListenStream=9090\n\rListenStream=$PORT" > $PORT_COCKPIT_FILE
+    echo "Se ha cambiado el puerto de cockpit a: $PORT"
+    echo "Recuerde que tiene que reiniciar el servidor"
+}
+
 # Función para instalar el administrador de consola de NetworkManager
 function install_nmtui() {
     echo "Instalando el Gestor de Consola de NetworkManager"
@@ -149,12 +168,14 @@ function menu() {
     echo "           *          Esto es el Menú             *"
     echo "           * 1.- Crear el usuario                 *"
     echo "           * 2.- Prueba de pausa                  *"
-    echo "           * 3.- Prueba de red                    *"
-    echo "           * 4.- Prueba de internet               *"
-    echo "           * 5.- Instalar NMTui                   *"
-    echo "           * 6.- Instalar TeamViewer              *"
-    echo "           * 7.- Comprobar dependencias           *"
-    echo "           * 8.- Crear mensage de ISSUE           *"
+    echo "           * 3.- Deshabilitar SELinux             *"
+    echo "           * 4.- Prueba de red                    *"
+    echo "           * 5.- Prueba de internet               *"
+    echo "           * 6.- Instalar NMTui                   *"
+    echo "           * 7.- Instalar TeamViewer              *"
+    echo "           * 8.- Comprobar dependencias           *"
+    echo "           * 9.- Crear mensage de ISSUE           *"
+    echo "           * 10.- Cambiar puerto de Cockpit       *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -169,37 +190,47 @@ function menu() {
         menu;
         ;;
         2)
-        pause --with-msg;
+        selinux_disable;
+        pause;
         menu;
         ;;
         3)
+        pause --with-msg;
+        menu;
+        ;;
+        4)
         network_check;
         pause;
         menu;
         ;;
-        4)
+        5)
         internet_check;
         pause;
         menu;
         ;;
-        5)
+        6)
         install_nmtui;
         pause;
         menu;
         ;;
-        6)
+        7)
         install_teamviewer;
         pause;
         menu;
         ;;
-        7)
+        8)
         check_depends;
         pause;
         menu;
         ;;
-        8)
+        9)
         issue_msg;
         pause --with-msg "Se ha creado correctamente el mensaje, pulse ENTER para continuar";
+        menu;
+        ;;
+        10)
+        change_cockpit_port;
+        pause;
         menu;
         ;;
         *)
