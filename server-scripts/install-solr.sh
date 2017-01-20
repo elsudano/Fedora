@@ -1,22 +1,21 @@
 #!/bin/bash
-# Titulo:       Instalación y configuración de NGINX
+# Titulo:       Configuración de Apache para V·COMM
 # Fecha:        23/12/16
 # Autor:        Carlos de la Torre
 # Versión:      1.0
-# Descripción: Instalación de servidor de servidor HTTP como balanceador de carga
+# Descripción:  Instalación y configuración de Apache
 # Opciones: Ninguna
-# Uso: install-nginx.sh
+# Uso: install-apache.sh
 
 
 # VARIABLES ESTATICAS
-DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
+DEPENDS=(dnf apache apachectl) # Dependencias necesarias
 DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
 MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
 MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
 
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
-TEMP_FILE=/tmp/file.tmp
 
 # FUNCIONES
 
@@ -29,7 +28,7 @@ function pause() {
     elif [[ $1 == "--with-msg" ]]; then
         read -p "Presione Enter para continuar o Ctrl+C para cancelar.";
     else
-        read -s -t 5
+        read -s
     fi
 }
 
@@ -78,7 +77,6 @@ function check_depends() {
     done
 }
 
-
 # Función para presentar el Menú
 # Sin parámetros de entrada
 function menu() {
@@ -86,14 +84,11 @@ function menu() {
     echo
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
-    echo "           * 1.-                                  *"
-    echo "           * 2.-                                  *"
-    echo "           * 3.-                                  *"
-    echo "           * 4.-                                  *"
-    echo "           * 5.-                                  *"
-    echo "           * 6.-                                  *"
-    echo "           * 7.-                                  *"
-    echo "           * 8.-                                  *"
+    echo "           * 1.- Comprobar dependencias           *"
+    echo "           * 2.- Instalación de Apache            *"
+    echo "           * 3.- Configuración de Apache          *"
+    echo "           * 4.- Instalación de modulos           *"
+    echo "           * 5.- Comprobar modulos instalados     *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -124,21 +119,6 @@ function menu() {
         menu;
         ;;
         5)
-
-        pause;
-        menu;
-        ;;
-        6)
-
-        pause;
-        menu;
-        ;;
-        7)
-
-        pause;
-        menu;
-        ;;
-        8)
 
         pause;
         menu;
