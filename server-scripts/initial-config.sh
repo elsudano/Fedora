@@ -16,6 +16,7 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
+SELINUX_FILE=/etc/selinux/config
 TEMP_FILE=/tmp/file.tmp
 ISSUE_FILE=/etc/issue
 PORT_COCKPIT_FILE=/etc/systemd/system/cockpit.socket.d/listen.conf
@@ -50,9 +51,29 @@ function create_user() {
     pause --with-msg;
 }
 
-function selinux_disable() {
-    echo "Deshabilitando el SELinux"
-    
+# Funciónm para habilitar/deshabilitar el SELinux
+function selinux() {
+    /usr/sbin/sestatus
+    echo
+    if [[ "$(/usr/sbin/getenforce)" == "Disabled" ]]; then
+        read -p "¿Desea Activarlo? Y/N " opt
+        if [[ $opt == "y" ]] || [[ $opt == "Y" ]];then
+            sed -i 's/SELINUX=disabled/SELINUX=disabled/g' $SELINUX_FILE
+            echo "SELinux habilitado..."
+            read -s -t 3
+        fi
+    else
+        read -p "¿Desea Desactivarlo? Y/N " opt
+        if [[ $opt == "y" ]] || [[ $opt == "Y" ]];then
+            sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' $SELINUX_FILE
+            echo "SELinux deshabilitado..."
+            read -s -t 3
+        fi
+    fi
+    read -p "Es necesario reiniciar el servidor, ¿Desea hacerlo ahora? Y/N " opt
+    if [[ $opt == "y" ]] || [[ $opt == "Y" ]];then
+        reboot
+    fi
 }
 
 # Función para mostrar y comprobar cuales son las direcciones IP
@@ -131,14 +152,17 @@ function issue_msg() {
 # Función que cambia el puerto de administración de cockpit al que quiere el usuario
 function change_cockpit_port() {
     read -p "Que puerto desea: " PORT
+    # hacer una validación de con REGEX de que es un puerto valido
     if [ -e $PORT_COCKPIT_FILE ];then
         rm $PORT_COCKPIT_FILE
     fi
     # esto lo tienes que poner para que se reconozca de manera automatica
     mkdir /etc/systemd/system/cockpit.socket.d
-    echo -e "[Socket]\n\rListenStream=\n\rListenStream=9090\n\rListenStream=$PORT" > $PORT_COCKPIT_FILE
+    echo -e "[Socket]\n\rListenStream=\rListenStream=9090\rListenStream=$PORT" > $PORT_COCKPIT_FILE
     echo "Se ha cambiado el puerto de cockpit a: $PORT"
-    echo "Recuerde que tiene que reiniciar el servidor"
+    systemctl daemon-reload
+    systemctl restart cockpit.socket
+    echo "Se ha reiniciado el socket de cockpit"
 }
 
 # Función para instalar el administrador de consola de NetworkManager
@@ -167,8 +191,8 @@ function menu() {
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
     echo "           * 1.- Crear el usuario                 *"
-    echo "           * 2.- Prueba de pausa                  *"
-    echo "           * 3.- Deshabilitar SELinux             *"
+    echo "           * 2.- Cambiar estado de SELinux        *"
+    echo "           * 3.- Prueba de pausa                  *"
     echo "           * 4.- Prueba de red                    *"
     echo "           * 5.- Prueba de internet               *"
     echo "           * 6.- Instalar NMTui                   *"
@@ -190,7 +214,7 @@ function menu() {
         menu;
         ;;
         2)
-        selinux_disable;
+        selinux;
         pause;
         menu;
         ;;
