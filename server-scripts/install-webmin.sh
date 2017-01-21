@@ -78,11 +78,11 @@ function install_webmin(){
     if [ -e $REPO_WEBMIN_FILE ];then
         rm $REPO_WEBMIN_FILE
     fi
-    echo -e "[Webmin]\n\rname=Webmin Distribution Neutral\n\r#baseurl=http://download.webmin.com/download/yum\n\rmirrorlist=http://download.webmin.com/download/yum/mirrorlist\n\renabled=1" > $REPO_WEBMIN_FILE
+    echo -e "[Webmin]\r\nname=Webmin Distribution Neutral\r\n#baseurl=http://download.webmin.com/download/yum\r\nmirrorlist=http://download.webmin.com/download/yum/mirrorlist\r\nenabled=1" > $REPO_WEBMIN_FILE
     cat $REPO_WEBMIN_FILE
-    #wget http://www.webmin.com/jcameron-key.asc
-    rpm --import http://www.webmin.com/jcameron-key.asc
-    dnf install webmin
+    wget http://www.webmin.com/jcameron-key.asc -O /tmp/key.asc
+    rpm --import /tmp/key.asc
+    dnf -y install webmin
 }
 
 # Función que se encarga de la configuración miníma de WebMin

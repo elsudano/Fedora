@@ -57,22 +57,41 @@ function selinux() {
     echo
     if [[ "$(/usr/sbin/getenforce)" == "Disabled" ]]; then
         read -p "¿Desea Activarlo? Y/N " opt
-        if [[ $opt == "y" ]] || [[ $opt == "Y" ]];then
-            sed -i 's/SELINUX=disabled/SELINUX=disabled/g' $SELINUX_FILE
+        if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+            sed -i 's/SELINUX=disabled/SELINUX=enforcing/g' $SELINUX_FILE
             echo "SELinux habilitado..."
             read -s -t 3
         fi
     else
         read -p "¿Desea Desactivarlo? Y/N " opt
-        if [[ $opt == "y" ]] || [[ $opt == "Y" ]];then
+        if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
             sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' $SELINUX_FILE
             echo "SELinux deshabilitado..."
             read -s -t 3
         fi
     fi
     read -p "Es necesario reiniciar el servidor, ¿Desea hacerlo ahora? Y/N " opt
-    if [[ $opt == "y" ]] || [[ $opt == "Y" ]];then
+    if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         reboot
+    fi
+}
+
+# Funciónm para habilitar/deshabilitar el firewalld
+function firewall() {
+    systemctl status firewalld.service
+    read -p "Que desea hacer, ¿Habilitar ó Deshabilitar el firewall? H/D " opt
+    if [[ $opt == "h" ]] || [[ $opt == "H" ]];then
+        read -p "¿Quiere realizar los cambios de forma permanente (on boot)? Y/N " opt
+        if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+            systemctl enable firewalld.service
+        fi
+        systemctl start firewalld.service
+    elif [[ $opt == "d" ]] || [[ $opt == "D" ]]; then
+        read -p "¿Quiere realizar los cambios de forma permanente (on boot)? Y/N " opt
+        if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+            systemctl disable firewalld.service
+        fi
+        systemctl stop firewalld.service
     fi
 }
 
@@ -140,13 +159,23 @@ function check_depends() {
 }
 
 # Función para crear el mensaje de ISSUE
+# parámetro 1 sirve para dar nombre al producto
 function issue_msg() {
-    echo "Comienza la instalación de TeamViewer"
+    echo "Se esta generando el mensaje que saldrá en la consola de inicio de sesión del servidor"
     if [ -e $ISSUE_FILE ];then
         rm $ISSUE_FILE
     fi
-    echo -e "" > $ISSUE_FILE
-
+    local port=$(grep /usr/lib/systemd/system/cockpit.socket -e "ListenStream=" | awk -F"=" '{print $2}')
+    #echo -e "\S\r\nKernel $(uname -r) on an \m (\l)\r\n" >> $ISSUE_FILE
+    echo "     Veridata S.L.       $1" > $ISSUE_FILE
+    echo "----------------------------------------------" >> $ISSUE_FILE
+    echo "Configurado por:        Carlos de la Torre" >> $ISSUE_FILE
+    echo "Sistema:                \S \s \v" >> $ISSUE_FILE
+    echo "Kernel:                 \r on an \m (\l)" >> $ISSUE_FILE
+    echo "Nombre Servidor:        \n.\o" >> $ISSUE_FILE
+    echo >> $ISSUE_FILE
+    echo -e "Consola de Administración:\r\n\thttps://\4:$port/ or https://[\6]:$port/" >> $ISSUE_FILE
+    cat $ISSUE_FILE
 }
 
 # Función que cambia el puerto de administración de cockpit al que quiere el usuario
@@ -157,12 +186,15 @@ function change_cockpit_port() {
         rm $PORT_COCKPIT_FILE
     fi
     # esto lo tienes que poner para que se reconozca de manera automatica
-    mkdir /etc/systemd/system/cockpit.socket.d
-    echo -e "[Socket]\n\rListenStream=\rListenStream=9090\rListenStream=$PORT" > $PORT_COCKPIT_FILE
+    if [ ! -d /etc/systemd/system/cockpit.socket.d ];then
+        mkdir /etc/systemd/system/cockpit.socket.d
+    fi
+    echo -e "[Socket]\r\nListenStream=\r\nListenStream=9090\r\nListenStream=$PORT" > $PORT_COCKPIT_FILE
     echo "Se ha cambiado el puerto de cockpit a: $PORT"
     systemctl daemon-reload
     systemctl restart cockpit.socket
     echo "Se ha reiniciado el socket de cockpit"
+    systemctl status cockpit.socket
 }
 
 # Función para instalar el administrador de consola de NetworkManager
@@ -180,7 +212,7 @@ function install_teamviewer() {
     rpm --import http://download.teamviewer.com/download/TeamViewer_Linux_PubKey.asc
     wget http://download.teamviewer.com/download/teamviewer.i686.rpm -O $TEMP_FILE
     mv $TEMP_FILE /tmp/teamviewer.i686.rpm
-    dnf install /tmp/teamviewer.i686.rpm
+    dnf -y install /tmp/teamviewer.i686.rpm
 }
 
 # Función para presentar el Menú
@@ -192,14 +224,15 @@ function menu() {
     echo "           *          Esto es el Menú             *"
     echo "           * 1.- Crear el usuario                 *"
     echo "           * 2.- Cambiar estado de SELinux        *"
-    echo "           * 3.- Prueba de pausa                  *"
-    echo "           * 4.- Prueba de red                    *"
-    echo "           * 5.- Prueba de internet               *"
-    echo "           * 6.- Instalar NMTui                   *"
-    echo "           * 7.- Instalar TeamViewer              *"
-    echo "           * 8.- Comprobar dependencias           *"
-    echo "           * 9.- Crear mensage de ISSUE           *"
-    echo "           * 10.- Cambiar puerto de Cockpit       *"
+    echo "           * 3.- Cambiar estado de Firewall       *"
+    echo "           * 4.- Prueba de pausa                  *"
+    echo "           * 5.- Prueba de red                    *"
+    echo "           * 6.- Prueba de internet               *"
+    echo "           * 7.- Instalar NMTui                   *"
+    echo "           * 8.- Instalar TeamViewer              *"
+    echo "           * 9.- Comprobar dependencias           *"
+    echo "           * 10.- Crear mensage de ISSUE          *"
+    echo "           * 11.- Cambiar puerto de Cockpit       *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -219,40 +252,45 @@ function menu() {
         menu;
         ;;
         3)
-        pause --with-msg;
+        firewall;
+        pause;
         menu;
         ;;
         4)
+        pause --with-msg;
+        menu;
+        ;;
+        5)
         network_check;
         pause;
         menu;
         ;;
-        5)
+        6)
         internet_check;
         pause;
         menu;
         ;;
-        6)
+        7)
         install_nmtui;
         pause;
         menu;
         ;;
-        7)
+        8)
         install_teamviewer;
         pause;
         menu;
         ;;
-        8)
+        9)
         check_depends;
         pause;
         menu;
         ;;
-        9)
-        issue_msg;
-        pause --with-msg "Se ha creado correctamente el mensaje, pulse ENTER para continuar";
+        10)
+        issue_msg "V·COMM Madrid";
+        pause;
         menu;
         ;;
-        10)
+        11)
         change_cockpit_port;
         pause;
         menu;
