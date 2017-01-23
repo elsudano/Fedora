@@ -43,11 +43,6 @@ function is_root {
     fi
 }
 
-function create_user() {
-    echo "Indique el usuario que desea crear"
-    pause --with-msg;
-}
-
 # Funcion de wrapper para find
 # parámetro de entrada $1 lo que queremos buscar
 function buscar(){
@@ -78,6 +73,17 @@ function check_depends() {
     done
 }
 
+# Función que se encarga realizar la instalación mínima de PHP ver. 5.6
+function install_php56(){
+    echo "Comienza la instalación de PHP 5.6"
+    dnf -y install php.x86_64
+}
+
+# Función que se encarga realizar la instalación mínima de PHP ver. 7.0
+function install_php70(){
+    echo "Comienza la instalación de PHP 7.0"
+    #dnf -y install php.x86_64
+}
 
 # Función para presentar el Menú
 # Sin parámetros de entrada
@@ -86,9 +92,9 @@ function menu() {
     echo
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
-    echo "           * 1.-                                  *"
-    echo "           * 2.-                                  *"
-    echo "           * 3.-                                  *"
+    echo "           * 1.- Comprobar Dependencias           *"
+    echo "           * 2.- Instalar PHP 5.6                 *"
+    echo "           * 3.- Instalar PHP 7.0                 *"
     echo "           * 4.-                                  *"
     echo "           * 5.-                                  *"
     echo "           * 6.-                                  *"
@@ -104,17 +110,17 @@ function menu() {
         exit;
         ;;
         1)
-
+        check_depends;
         pause;
         menu;
         ;;
         2)
-
+        install_php56;
         pause;
         menu;
         ;;
         3)
-
+        install_php70;
         pause;
         menu;
         ;;
