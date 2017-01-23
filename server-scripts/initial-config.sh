@@ -195,6 +195,7 @@ function change_cockpit_port() {
     systemctl restart cockpit.socket
     echo "Se ha reiniciado el socket de cockpit"
     systemctl status cockpit.socket
+    netstat -ltn
 }
 
 # Función para instalar el administrador de consola de NetworkManager
@@ -231,8 +232,8 @@ function menu() {
     echo "           * 7.- Instalar NMTui                   *"
     echo "           * 8.- Instalar TeamViewer              *"
     echo "           * 9.- Comprobar dependencias           *"
-    echo "           * 10.- Crear mensage de ISSUE          *"
-    echo "           * 11.- Cambiar puerto de Cockpit       *"
+    echo "           * 10.- Cambiar puerto de Cockpit       *"
+    echo "           * 11.- Crear mensage de ISSUE          *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -286,12 +287,12 @@ function menu() {
         menu;
         ;;
         10)
-        issue_msg "V·COMM Madrid";
+        change_cockpit_port;
         pause;
         menu;
         ;;
         11)
-        change_cockpit_port;
+        issue_msg "V·COMM Madrid";
         pause;
         menu;
         ;;
