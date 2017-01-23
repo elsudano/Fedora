@@ -17,6 +17,7 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
+PATH_DATA_WEB=/datawww/html
 
 # FUNCIONES
 
@@ -73,6 +74,36 @@ function check_depends() {
     done
 }
 
+# Función que se encarga realizar la instalación mínima de Apache
+function install_apache(){
+    echo "Comienza la instalación de Apache"
+    dnf -y install httpd.x86_64
+    if [ ! -e -d $PATH_DATA_WEB ];then
+        echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
+        mkdir $PATH_DATA_WEB
+    fi
+}
+
+# Función que se encarga realizar la instalación de los módulos necesarios para V·COMM
+function install_apache_modules(){
+    echo "Instalación de SSL module"
+    dnf -y install mod_ssl.x86_64
+}
+
+# Función que se encarga de crear los usuarios y los grupos para el correcto funcionamiento
+function create_user_and_group(){
+    echo "Crearemos un usuario para apache"
+    read -p "Indique el usuario: " name_user
+    read -p "Cuál es el nombre del usuario completo: " complete_name_user
+    read -p "Indique el grupo al que pertenece: " name_group
+    echo "El directorio donde se alojan las webs es: $PATH_DATA_WEB"
+    read -p "¿Es correcto? (Y/N): " opt
+    if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
+        read -p "Indique la ruta donde se almacenarán las webs: " PATH_DATA_WEB
+    fi
+    groupadd -f $name_group
+    useradd -M -d $PATH_DATA_WEB -c "$complete_name_user" -g $name_group $name_user
+}
 
 # Función para presentar el Menú
 # Sin parámetros de entrada
@@ -83,8 +114,8 @@ function menu() {
     echo "           *          Esto es el Menú             *"
     echo "           * 1.- Comprobar Dependencias           *"
     echo "           * 2.- Instalar Apache                  *"
-    echo "           * 3.-                                  *"
-    echo "           * 4.-                                  *"
+    echo "           * 3.- Instalar módulos de Apache       *"
+    echo "           * 4.- Crear Usuario y Grupo Apache     *"
     echo "           * 5.-                                  *"
     echo "           * 6.-                                  *"
     echo "           * 7.-                                  *"
@@ -109,12 +140,12 @@ function menu() {
         menu;
         ;;
         3)
-
+        install_apache_modules;
         pause;
         menu;
         ;;
         4)
-
+        create_user_and_group;
         pause;
         menu;
         ;;
