@@ -189,7 +189,7 @@ function change_cockpit_port() {
     if [ ! -d /etc/systemd/system/cockpit.socket.d ];then
         mkdir /etc/systemd/system/cockpit.socket.d
     fi
-    echo -e "[Socket]\r\nListenStream=\r\nListenStream=9090\r\nListenStream=$PORT" > $PORT_COCKPIT_FILE
+    echo -e "[Socket]\r\nListenStream=\r\nListenStream=$PORT" > $PORT_COCKPIT_FILE
     echo "Se ha cambiado el puerto de cockpit a: $PORT"
     systemctl daemon-reload
     systemctl restart cockpit.socket

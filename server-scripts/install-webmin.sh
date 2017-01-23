@@ -90,6 +90,12 @@ function config_webmin(){
     echo "Configuración"
 }
 
+# Función que se encarga de comprobar si webmin está instalado con todos sus módulos
+function check_instalation_webmin(){
+    echo "La instalación de WebMin está:"
+    systemctl status webmin.service
+}
+
 # Función para presentar el Menú
 # Sin parámetros de entrada
 function menu() {
@@ -101,7 +107,7 @@ function menu() {
     echo "           * 2.- Instalación de WebMin            *"
     echo "           * 3.- Configuración de WebMin          *"
     echo "           * 4.- Instalación de modulos           *"
-    echo "           * 5.- Comprobar modulos instalados     *"
+    echo "           * 5.- Comprobar instalación WebMin     *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -132,7 +138,7 @@ function menu() {
         menu;
         ;;
         5)
-
+        check_instalation_webmin;
         pause;
         menu;
         ;;

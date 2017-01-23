@@ -43,11 +43,6 @@ function is_root {
     fi
 }
 
-function create_user() {
-    echo "Indique el usuario que desea crear"
-    pause --with-msg;
-}
-
 # Funcion de wrapper para find
 # parámetro de entrada $1 lo que queremos buscar
 function buscar(){
@@ -86,8 +81,8 @@ function menu() {
     echo
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
-    echo "           * 1.-                                  *"
-    echo "           * 2.-                                  *"
+    echo "           * 1.- Comprobar Dependencias           *"
+    echo "           * 2.- Instalar Apache                  *"
     echo "           * 3.-                                  *"
     echo "           * 4.-                                  *"
     echo "           * 5.-                                  *"
@@ -104,12 +99,12 @@ function menu() {
         exit;
         ;;
         1)
-
+        check_depends;
         pause;
         menu;
         ;;
         2)
-
+        install_apache;
         pause;
         menu;
         ;;
