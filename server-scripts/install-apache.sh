@@ -169,7 +169,7 @@ function start_stop_apache(){
     elif [[ $opt == "r" ]] || [[ $opt == "R" ]]; then
         systemctl restart httpd.service
     elif [[ $opt == "c" ]] || [[ $opt == "C" ]];then
-        break;
+        echo "Cancelado";
     else
         clear;
         start_stop_apache;
