@@ -18,6 +18,9 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
 PATH_DATA_WEB=/datawww/html
+PATH_DATA_VCOMM=/datawww/datavcomm
+APACHE_USER=gestapa
+APACHE_GROUP=datawww
 
 # FUNCIONES
 
@@ -74,35 +77,59 @@ function check_depends() {
     done
 }
 
+# Función que se encarga de crear los usuarios y los grupos para el correcto funcionamiento
+function create_user_and_group(){
+    echo "Crearemos un usuario para apache"
+    read -p "Indique el usuario: (default:$APACHE_USER) " APACHE_USER
+    read -p "Cuál es el nombre del usuario completo: " complete_name_user
+    read -p "Indique el grupo al que pertenece: (default:$APACHE_GROUP) " APACHE_GROUP
+    echo "El directorio donde se alojan las webs es: $PATH_DATA_WEB"
+    read -p "¿Es correcto? (Y/N): " opt
+    if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
+        read -p "Indique la ruta donde se almacenarán las webs: " PATH_DATA_WEB
+    fi
+    groupadd -f $APACHE_GROUP
+    useradd -M -d $PATH_DATA_WEB -c "$complete_name_user" -g $APACHE_GROUP $APACHE_USER
+    chown -R $APACHE_USER:$APACHE_GROUP $PATH_DATA_WEB
+}
+
+# Función que se encarga de crear los directorios para los datos y el directorio root web para apache
+function create_data_root_path(){
+    if [ -e $PATH_DATA_WEB ] && [ -d $PATH_DATA_WEB ];then
+        read -p "Desea utilizar el directorio $PATH_DATA_WEB como root web? (Y/N): " opt
+        if [ $opt == "n" ] || [ $opt == "N" ];then
+            read -p "Indique el directorio root web:" PATH_DATA_WEB
+            mkdir $PATH_DATA_WEB
+            echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
+        fi
+    else
+        read -p "Indique el directorio root web: (default:$PATH_DATA_WEB) " PATH_DATA_WEB
+        if [ -n $PATH_DATA_WEB ];then
+            PATH_DATA_WEB="/datawww/html"
+        fi
+        echo "dir: $PATH_DATA_WEB"
+        mkdir $PATH_DATA_WEB
+        echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
+    fi
+    # Con esto nos aseguramos que el directorio de datos esta en el mismo directorio que el root
+    if [ ! -e $PATH_DATA_WEB/../datavcomm ];then
+        echo "Se creará el directorio 'datavcomm' al mismo nivel que $PATH_DATA_WEB para alojar datos del software"
+        cd $PATH_DATA_WEB
+        cd ..
+        mkdir ./datavcomm
+    fi
+}
+
 # Función que se encarga realizar la instalación mínima de Apache
 function install_apache(){
     echo "Comienza la instalación de Apache"
     dnf -y install httpd.x86_64
-    if [ ! -e -d $PATH_DATA_WEB ];then
-        echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
-        mkdir $PATH_DATA_WEB
-    fi
 }
 
 # Función que se encarga realizar la instalación de los módulos necesarios para V·COMM
 function install_apache_modules(){
     echo "Instalación de SSL module"
     dnf -y install mod_ssl.x86_64
-}
-
-# Función que se encarga de crear los usuarios y los grupos para el correcto funcionamiento
-function create_user_and_group(){
-    echo "Crearemos un usuario para apache"
-    read -p "Indique el usuario: " name_user
-    read -p "Cuál es el nombre del usuario completo: " complete_name_user
-    read -p "Indique el grupo al que pertenece: " name_group
-    echo "El directorio donde se alojan las webs es: $PATH_DATA_WEB"
-    read -p "¿Es correcto? (Y/N): " opt
-    if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
-        read -p "Indique la ruta donde se almacenarán las webs: " PATH_DATA_WEB
-    fi
-    groupadd -f $name_group
-    useradd -M -d $PATH_DATA_WEB -c "$complete_name_user" -g $name_group $name_user
 }
 
 # Función para presentar el Menú
@@ -113,10 +140,10 @@ function menu() {
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
     echo "           * 1.- Comprobar Dependencias           *"
-    echo "           * 2.- Instalar Apache                  *"
-    echo "           * 3.- Instalar módulos de Apache       *"
-    echo "           * 4.- Crear Usuario y Grupo Apache     *"
-    echo "           * 5.-                                  *"
+    echo "           * 2.- Crear Usuario y Grupo Apache     *"
+    echo "           * 3-  Crear dir. Root y Data           *"
+    echo "           * 4-  Instalar Apache                  *"
+    echo "           * 5.- Instalar módulos de Apache       *"
     echo "           * 6.-                                  *"
     echo "           * 7.-                                  *"
     echo "           * 8.-                                  *"
@@ -135,22 +162,22 @@ function menu() {
         menu;
         ;;
         2)
-        install_apache;
-        pause;
-        menu;
-        ;;
-        3)
-        install_apache_modules;
-        pause;
-        menu;
-        ;;
-        4)
         create_user_and_group;
         pause;
         menu;
         ;;
+        3)
+        create_data_root_path;
+        pause;
+        menu;
+        ;;
+        4)
+        install_apache;
+        pause;
+        menu;
+        ;;
         5)
-
+        install_apache_modules;
         pause;
         menu;
         ;;
