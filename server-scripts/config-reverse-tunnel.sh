@@ -84,7 +84,11 @@ function generate_keys(){
     read -p "Por favor indique la dirección del fichero: " PATH_KEY_FILE
     read -p "Un comentario descriptivo: " comment
     #echo -e "ssh-keygen -t rsa -b 2048 -C $comment -f $PATH_KEY_FILE"
-    ssh-keygen -t rsa -b 2048 -C $comment -f $PATH_KEY_FILE
+    if [ -n "$PATH_KEY_FILE" ];then
+        ssh-keygen -t rsa -b 2048 -C $comment -f $PATH_KEY_FILE
+    else
+        echo "Tiene que indicar la ruta del fichero de claves"
+    fi
 }
 
 # Función que copia la parte publica de la clave al servidor remoto
