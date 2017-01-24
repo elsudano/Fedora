@@ -121,7 +121,21 @@ function install_modules_php56() {
 
 # Función que se encarga de instalar y configurar los modulos adicionales de PHP 7.0
 function install_modules_php70() {
-
+    # mbstring module
+    dnf -y install php-mbstring.x86_64;
+    # mcrypt module
+    dnf -y install php-mcrypt.x86_64;
+    # mssql mssqli PDOmssql module
+    dnf -y install php-mssql.x86_64;
+    # mysql mysqli PDOmysql module
+    dnf -y install php-mysql.x86_64;
+    # pgsql PDOpgsql module
+    dnf -y install php-pgsql.x86_64;
+    # xmlrpc module
+    dnf -y install php-xmlrpc.x86_64;
+    # xsl wddx shmop xmlwriter xmlreader xml modules
+    dnf -y install php-xml.x86_64;
+    systemctl restart httpd.service;
 }
 
 # Función que se encarga realizar la instalación mínima de PHP ver. 7.0
