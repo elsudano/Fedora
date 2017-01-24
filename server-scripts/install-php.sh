@@ -138,6 +138,11 @@ function install_modules_php70() {
     systemctl restart httpd.service;
 }
 
+# Función que se encarga de modificar las variables concretas de PHP.ini para que funcione la aplicación
+function config_phpini(){
+    echo "se tiene que parcerar con sed y con awk las variables del fichero de momento se hace manual"
+}
+
 # Función que se encarga realizar la instalación mínima de PHP ver. 7.0
 function create_phpinfo(){
     echo "Crearemos el fichero de test.php y mostraremos que es lo que contiene"
@@ -162,6 +167,20 @@ function create_phpinfo(){
     fi
 }
 
+# Función que se encarga de borrar el fichero de test.php
+function delete_phpinfo(){
+    read -p "¿Cuál es el usuario que se encarga de gestionar el servidor web? " user
+    if [ -n $user ];then
+        homedir=$( getent passwd "$user" | cut -d: -f6)
+        read -p "Desea eliminar el fichero de prueba: $homedir/test.php (S/N) " opt
+        if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+            rm -f $homedir/test.php
+        fi
+    else
+        echo "El usuario no puede ser vacio";
+    fi
+}
+
 # Función para presentar el Menú
 # Sin parámetros de entrada
 function menu() {
@@ -174,9 +193,9 @@ function menu() {
     echo "           * 3.- Instalar PHP 7.0                 *"
     echo "           * 4.- Instalar modulos de PHP 5.6      *"
     echo "           * 5.- Instalar modulos de PHP 7.0      *"
-    echo "           * 6.- Crear fichero PHPINFO            *"
-    echo "           * 7.-                                  *"
-    echo "           * 8.-                                  *"
+    echo "           * 6.- Configurar PHP.ini               *"
+    echo "           * 7.- Crear fichero PHPINFO            *"
+    echo "           * 8.- Eliminar fichero PHPINFO         *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -212,17 +231,17 @@ function menu() {
         menu;
         ;;
         6)
-        create_phpinfo;
+        config_phpini;
         pause;
         menu;
         ;;
         7)
-
+        create_phpinfo;
         pause;
         menu;
         ;;
         8)
-
+        delete_phpinfo;
         pause;
         menu;
         ;;
