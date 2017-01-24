@@ -234,5 +234,5 @@ function menu() {
         ;;
     esac
 }
-is_root;
+#is_root;
 menu;
