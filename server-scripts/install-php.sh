@@ -85,6 +85,21 @@ function install_php70(){
     #dnf -y install php.x86_64
 }
 
+# Función que se encarga realizar la instalación mínima de PHP ver. 7.0
+function create_phpinfo(){
+    echo "Crearemos el fichero de test.php y mostraremos que es lo que contiene"
+    read -p "¿Cuál es el usuario que se encarga de gestionar el servidor web? " user
+    if [ -n $user ];then
+        echo "El usuario no puede ser vacio"
+        clear;
+        create_phpinfo;
+    fi
+    homedir=$( getent passwd "$user" | cut -d: -f6)
+    echo $homedir;
+    # echo -e "<?php\r\nphpinfo();" > $homedir/test.php
+    curl http://localhost/test.php
+}
+
 # Función para presentar el Menú
 # Sin parámetros de entrada
 function menu() {
@@ -95,7 +110,7 @@ function menu() {
     echo "           * 1.- Comprobar Dependencias           *"
     echo "           * 2.- Instalar PHP 5.6                 *"
     echo "           * 3.- Instalar PHP 7.0                 *"
-    echo "           * 4.-                                  *"
+    echo "           * 4.- Crear fichero PHPINFO            *"
     echo "           * 5.-                                  *"
     echo "           * 6.-                                  *"
     echo "           * 7.-                                  *"
@@ -125,7 +140,7 @@ function menu() {
         menu;
         ;;
         4)
-
+        create_phpinfo;
         pause;
         menu;
         ;;

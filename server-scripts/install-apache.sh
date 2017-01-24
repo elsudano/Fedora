@@ -168,7 +168,7 @@ function start_stop_apache(){
         systemctl stop httpd.service
     elif [[ $opt == "r" ]] || [[ $opt == "R" ]]; then
         systemctl restart httpd.service
-    elif [[ $opt == "c" ]] || [[ $opt == "C" ]]
+    elif [[ $opt == "c" ]] || [[ $opt == "C" ]];then
         break;
     else
         clear;
@@ -232,12 +232,12 @@ function menu() {
         menu;
         ;;
         7)
-        create_virtual_host
+        create_virtual_host;
         pause;
         menu;
         ;;
         8)
-
+        start_stop_apache;
         pause;
         menu;
         ;;
