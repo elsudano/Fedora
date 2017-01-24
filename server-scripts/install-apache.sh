@@ -77,22 +77,6 @@ function check_depends() {
     done
 }
 
-# Función que se encarga de crear los usuarios y los grupos para el correcto funcionamiento
-function create_user_and_group(){
-    echo "Crearemos un usuario para apache"
-    read -p "Indique el usuario: (default:$APACHE_USER) " APACHE_USER
-    read -p "Cuál es el nombre del usuario completo: " complete_name_user
-    read -p "Indique el grupo al que pertenece: (default:$APACHE_GROUP) " APACHE_GROUP
-    echo "El directorio donde se alojan las webs es: $PATH_DATA_WEB"
-    read -p "¿Es correcto? (Y/N): " opt
-    if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
-        read -p "Indique la ruta donde se almacenarán las webs: " PATH_DATA_WEB
-    fi
-    groupadd -f $APACHE_GROUP
-    useradd -M -d $PATH_DATA_WEB -c "$complete_name_user" -g $APACHE_GROUP $APACHE_USER
-    chown -R $APACHE_USER:$APACHE_GROUP $PATH_DATA_WEB
-}
-
 # Función que se encarga de crear los directorios para los datos y el directorio root web para apache
 function create_data_root_path(){
     if [ -e $PATH_DATA_WEB ] && [ -d $PATH_DATA_WEB ];then
@@ -113,10 +97,41 @@ function create_data_root_path(){
     fi
     # Con esto nos aseguramos que el directorio de datos esta en el mismo directorio que el root
     if [ ! -e $PATH_DATA_WEB/../datavcomm ];then
-        echo "Se creará el directorio 'datavcomm' al mismo nivel que $PATH_DATA_WEB para alojar datos del software"
-        cd $PATH_DATA_WEB
-        cd ..
-        mkdir ./datavcomm
+        echo "Se creará el directorio 'datavcomm' al mismo nivel que $PATH_DATA_WEB/../datavcomm para alojar datos del software"
+        mkdir $PATH_DATA_WEB/../datavcomm
+    fi
+}
+
+# Función que se encarga de crear los usuarios y los grupos para el correcto funcionamiento
+function create_user_and_group(){
+    echo "Crearemos un usuario para apache"
+    read -p "Indique el usuario: (default:$APACHE_USER) " APACHE_USER
+    if [ -n $APACHE_USER ];then
+        APACHE_USER=gestapa
+    fi
+    read -p "Cuál es el nombre del usuario completo: " complete_name_user
+    read -p "Indique el grupo al que pertenece: (default:$APACHE_GROUP) " APACHE_GROUP
+    if [ -n $APACHE_GROUP ];then
+        APACHE_GROUP=datawww
+    fi
+    echo "El directorio donde se alojan las webs es: $PATH_DATA_WEB"
+    read -p "¿Es correcto? (Y/N): " opt
+    if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
+        read -p "Indique la ruta donde se almacenarán las webs: " PATH_DATA_WEB
+    fi
+    groupadd -f $APACHE_GROUP
+    useradd -M -d $PATH_DATA_WEB -c "$complete_name_user" -g $APACHE_GROUP $APACHE_USER
+    if [ -e $PATH_DATA_WEB/../datavcomm ];then
+        chown -R $APACHE_USER:$APACHE_GROUP $PATH_DATA_WEB
+        chmod 0775 $PATH_DATA_WEB
+    else
+        echo "Falta el directorio root web, para poder asignarle permisos"
+    fi
+    if [ -e $PATH_DATA_WEB/../datavcomm ];then
+        chown -R $APACHE_USER:$APACHE_GROUP $PATH_DATA_WEB/../datavcomm
+        chmod 0775 $PATH_DATA_WEB/../datavcomm
+    else
+        echo "Falta el directorio de datos, para poder asignarle permisos"
     fi
 }
 
@@ -124,6 +139,7 @@ function create_data_root_path(){
 function install_apache(){
     echo "Comienza la instalación de Apache"
     dnf -y install httpd.x86_64
+    echo "sacar una lista de usuarios y grupos y permitir elegir al usuario"
 }
 
 # Función que se encarga realizar la instalación de los módulos necesarios para V·COMM
@@ -140,8 +156,8 @@ function menu() {
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
     echo "           * 1.- Comprobar Dependencias           *"
-    echo "           * 2.- Crear Usuario y Grupo Apache     *"
-    echo "           * 3-  Crear dir. Root y Data           *"
+    echo "           * 2-  Crear dir. Root y Data           *"
+    echo "           * 3.- Crear Usuario y Grupo Apache     *"
     echo "           * 4-  Instalar Apache                  *"
     echo "           * 5.- Instalar módulos de Apache       *"
     echo "           * 6.-                                  *"
@@ -162,12 +178,12 @@ function menu() {
         menu;
         ;;
         2)
-        create_user_and_group;
+        create_data_root_path;
         pause;
         menu;
         ;;
         3)
-        create_data_root_path;
+        create_user_and_group;
         pause;
         menu;
         ;;
