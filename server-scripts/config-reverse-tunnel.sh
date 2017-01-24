@@ -110,6 +110,7 @@ function copy_public_key(){
 }
 
 # Función que se encarga de crear los usuarios y los grupos para el correcto funcionamiento
+# Opción de Mejora: lanzar un ping que permita mantener la conexión abierta.
 function create_reverse_tunnel(){
     if [ -n "$PATH_KEY_FILE" ] && [ -n "$REMOTE_USER" ] && [ -n "$REMOTE_HOST" ] && [ -n "$REMOTE_PORT" ];then
         echo "Desea utilizar los siguientes parametros: "
