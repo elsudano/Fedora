@@ -148,6 +148,34 @@ function install_apache_modules(){
     dnf -y install mod_ssl.x86_64
 }
 
+# Función que modifica los ficheros de configuración necesarios para la configuración basica de apache
+function basic_configuration_apache(){
+    echo "Buscar los ficheros de configuracion de apache y modificar solo las partes necesarias para que funcione"
+}
+
+# Función que se encarga de montar los virtual host necesarios
+function create_virtual_host(){
+    echo "Crear el fichero correspondiente en el directorio de configuracipon de apache"
+    # elegir los datos de ICAGR
+}
+
+# Función para arrancar y detener el servicio de Apache
+function start_stop_apache(){
+    read -p "Elija la opción a realizar ([I]niciar/[D]etener/[R]einiciar/[C]ancelar): " opt
+    if [[ $opt == "i" ]] || [[ $opt == "I" ]];then
+        systemctl start httpd.service
+    elif [[ $opt == "d" ]] || [[ $opt == "D" ]];then
+        systemctl stop httpd.service
+    elif [[ $opt == "r" ]] || [[ $opt == "R" ]]; then
+        systemctl restart httpd.service
+    elif [[ $opt == "c" ]] || [[ $opt == "C" ]]
+        break;
+    else
+        clear;
+        start_stop_apache;
+    fi
+}
+
 # Función para presentar el Menú
 # Sin parámetros de entrada
 function menu() {
@@ -160,9 +188,10 @@ function menu() {
     echo "           * 3.- Crear Usuario y Grupo Apache     *"
     echo "           * 4-  Instalar Apache                  *"
     echo "           * 5.- Instalar módulos de Apache       *"
-    echo "           * 6.-                                  *"
-    echo "           * 7.-                                  *"
-    echo "           * 8.-                                  *"
+    echo "           * 6.- Configuración de Apache          *"
+    echo "           * 7.- Crear Virtual Hosts              *"
+    echo "           * 8.- Habilitar/Deshabilita Apache     *"
+    echo "           * 9.-                                  *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -198,16 +227,21 @@ function menu() {
         menu;
         ;;
         6)
-
+        basic_configuration_apache;
         pause;
         menu;
         ;;
         7)
-
+        create_virtual_host
         pause;
         menu;
         ;;
         8)
+
+        pause;
+        menu;
+        ;;
+        9)
 
         pause;
         menu;
