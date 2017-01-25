@@ -21,6 +21,7 @@ TEMP_FILE=/tmp/file.tmp
 ADMIN_USER_DB=admindb
 ADMIN_USER_PASS=password
 MYSQL_SERVICE_FILE=/usr/lib/systemd/system/mysqld.service
+NAME_DB=VCOMM
 
 # FUNCIONES
 
@@ -98,8 +99,11 @@ function install_server(){
     dnf -y install community-mysql-server.x86_64
     PIDFile=$(cat $MYSQL_SERVICE_FILE | awk -F'=' '/PIDFile=/{print $2}')
     PIDFile=$(echo "$PIDFile" | sed 's/\//\\\//g')
-    sed -i "s/ExecStart=.*$/ExecStart=\/usr\/sbin\/mysqld --daemonize --pid-file=$PIDFile \$MYSQLD_OPTS/g" $MYSQL_SERVICE_FILE
+    systemctl stop mysqld.service
+    sed -i "s/ExecStart=.*$/ExecStart=\/usr\/libexec\/mysqld --daemonize --basedir=\/usr --pid-file=$PIDFile \$MYSQLD_OPTS/g" $MYSQL_SERVICE_FILE
+    systemctl unset-environment MYSQLD_OPTS
     systemctl daemon-reload
+    systemctl start mysqld.service
 }
 
 # Función que se encarga de poner la primera contraseña al usuario root
@@ -117,57 +121,67 @@ function put_pass_root(){
 # Función que se encarga cambiar la contraseña del usuario root de MySQL 5.7 en adelante
 function change_pass_root(){
     read -p "Indique la nueva contraseña de root: (default:$ADMIN_USER_PASS) " ADMIN_USER_PASS
-    if [ -n $ADMIN_USER_PASS ];then
+    if [ -z $ADMIN_USER_PASS ];then
         ADMIN_USER_PASS=password
     fi
     echo "Detenemos el servidor de MySQL..."
     systemctl stop mysqld.service
-    echo "Buscamos el fichero .pid...."
-    local hit=0
-    for dir in ${DIRS[@]}
-    do
-        if [ -x "$dir/mysqld.pid" ]; then
-            echo "Fichero encontrado..."
-            rm -f $dir/mysqld.pid
-            echo "Fichero eliminado..."
-            break;
-        fi
-    done
-    if [ $hit == 0 ]; then
-        echo "No se encuentra el fichero .PID"
-    fi
-    echo "Creamos el fichero para cambiar la contraseña"
-    echo -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$ADMIN_USER_PASS';" > $TEMP_FILE
-    echo "Asignamos el fichero al inicio de MySQL..."
-    systemctl set-environment MYSQLD_OPTS="--init-file=$TEMP_FILE"
+    echo "Asignamos valor a la variable de debug..."
+    systemctl set-environment MYSQLD_OPTS=" --user=mysql --skip-grant-tables"
+    echo "Cargamos de nuevo los servicios"
+    systemctl daemon-reload
     echo "Arrancamos MySQL..."
     systemctl start mysqld.service
-    # echo "Quitamos el fichero del inicio..."
-    # systemctl unset-environment MYSQLD_OPTS
-    # echo "Reiniciamos MySQL..."
-    # systemctl restart mysqld.service
-    # echo "Eliminamos fichero temporal..."
-    # rm -f $TEMP_FILE
+    pause;
+    systemctl status mysqld.service
+    echo -e " \r\n"
+    echo "A continuación copia la siguiente sentencia y ejecutala en el cliete de mysql"
+    echo -e " \r\n"
+    echo "UPDATE mysql.user"
+    echo "SET authentication_string = PASSWORD('$ADMIN_USER_PASS'), password_expired = 'N'"
+    echo "WHERE User = 'root' AND Host = 'localhost';"
+    echo "FLUSH PRIVILEGES;"
+    echo "QUIT;"
+    echo -e " \r\n"
+    mysql
+    echo "Quitamos la variable de debug..."
+    systemctl unset-environment MYSQLD_OPTS
+    echo "Reiniciamos MySQL..."
+    systemctl restart mysqld.service
+    pause;
+    systemctl status mysqld.service
 }
 
 # Función que se encarga de intalar el servidor de MySQL de Oracle
 function create_user_admin_db(){
     echo "Crearemos un usuario de administración para MySQL"
     read -p "Indique el usuario: (default:$ADMIN_USER_DB) " ADMIN_USER_DB
-    if [ -n $ADMIN_USER_DB ];then
+    if [ -z $ADMIN_USER_DB ];then
         ADMIN_USER_DB=admindb
     fi
     read -p "Indique la contraseña del usuario: (default:$ADMIN_USER_PASS) " ADMIN_USER_PASS
-    if [ -n $ADMIN_USER_PASS ];then
+    if [ -z $ADMIN_USER_PASS ];then
         ADMIN_USER_PASS=password
     fi
-    read -p "Indique la contraseña de root: " pass
-    if [ -n $pass ];then
-        echo "La contraseña de root no puede ser vacía"
-    else
-        mysql -u root -p $pass -h localhost -e "CREATE USER '$ADMIN_USER_DB'@'localhost' IDENTIFIED BY '$ADMIN_USER_PASS';"
-        mysql -u root -p $pass -h localhost -e "GRANT ALL PRIVILEGES ON * . * TO '$ADMIN_USER_DB'@'localhost';"
+    echo "Indique la contraseña de root: "
+    mysql -u root -p -h localhost -e "CREATE USER '$ADMIN_USER_DB'@'localhost' IDENTIFIED BY '$ADMIN_USER_PASS';"
+    mysql -u root -p -h localhost -e "GRANT ALL ON *.* TO '$ADMIN_USER_DB'@'localhost' WITH GRANT OPTION;"
+    mysql -u root -p -h localhost -e "SELECT host, user FROM mysql.user;"
+}
+
+# Función que se encarga de crear la base de datos para V·COMM
+function create_db(){
+    read -p "Nombre de la Base de datos: (default:$NAME_DB) " NAME_DB
+    if [ -n $NAME_DB ];then
+        NAME_DB=VCOMM
     fi
+    read -p "Usuario administrador: (default:$ADMIN_USER_DB) " ADMIN_USER_DB
+    if [ -n $ADMIN_USER_DB ];then
+        ADMIN_USER_DB=admindb
+    fi
+    echo "Indique la contraseña de $ADMIN_USER_DB: "
+    mysql -u $ADMIN_USER_DB -p -h localhost -e "CREATE DATABASE $NAME_DB;"
+
 }
 
 # Función para arrancar y detener el servicio de MySQL
@@ -206,8 +220,8 @@ function menu() {
     echo "           * 4.- Poner contraseña a Root          *"
     echo "           * 5.- Cambiar la Pass de Root          *"
     echo "           * 6.- Crear un usuario Admin. BD       *"
-    echo "           * 7.- Habilitar/Deshabilitar MySQL     *"
-    echo "           * 8.-                                  *"
+    echo "           * 7.- Crear Esquema de BD V·COMM       *"
+    echo "           * 8.- Habilitar/Deshabilitar MySQL     *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -248,12 +262,12 @@ function menu() {
         menu;
         ;;
         7)
-        start_stop_mysql;
+        create_db;
         pause;
         menu;
         ;;
         8)
-
+        start_stop_mysql;
         pause;
         menu;
         ;;
