@@ -140,7 +140,43 @@ function install_modules_php70() {
 
 # Función que se encarga de modificar las variables concretas de PHP.ini para que funcione la aplicación
 function config_phpini(){
-    echo "se tiene que parcerar con sed y con awk las variables del fichero de momento se hace manual"
+    read -p "¿Que tamaño maximo de fichero es el que se podrá subir al servidor?: (sin unidades) " upload
+    if [ -z $upload ];then
+        echo "Operación cancelada"
+    else
+        upload+="M"
+        #Maximum allowed size for uploaded files.
+        #http://php.net/upload-max-filesize
+        sed -i "s/upload_max_filesize = .*$/upload_max_filesize = $upload/g" /etc/php.ini
+    fi
+    read -p "¿Que tamaño maximo de fichero es el que podrá enviar por el metodo post?: (sin unidades) " post
+    if [ -z $post ];then
+        echo "Operación cancelada"
+    else
+        post+="M"
+        #Maximum size of POST data that PHP will accept.
+        #Its value may be 0 to disable the limit. It is ignored if POST data reading
+        #is disabled through enable_post_data_reading.
+        #http://php.net/post-max-size
+        sed -i "s/post_max_size = .*$/post_max_size = $post/g" /etc/php.ini
+    fi
+    read -p "¿Cuál será el tamaño maximo de de ocupación de memoría?: (sin unidades) " memory
+    if [ -z $memory ];then
+        echo "Operación cancelada"
+    else
+        memory+="M"
+        #Maximum amount of memory a script may consume (128MB)
+        #http://php.net/memory-limit
+        sed -i "s/memory_limit = .*$/memory_limit = $memory/g" /etc/php.ini
+    fi
+    read -p "¿Cuál es la ruta absoluta donde se almacenarán los ficheros de session?: " session_file
+    if [ -z $session_file ];then
+        echo "Operación cancelada"
+    else
+        #The path for which the cookie is valid.
+        #http://php.net/session.cookie-path
+        sed -i "s/session.cookie_path = .*$/session.cookie_path = $session_file/g" /etc/php.ini
+    fi
 }
 
 # Función que se encarga realizar la instalación mínima de PHP ver. 7.0
