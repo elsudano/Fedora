@@ -161,13 +161,19 @@ function create_virtual_host(){
 
 # Función para arrancar y detener el servicio de Apache
 function start_stop_apache(){
-    read -p "Elija la opción a realizar ([I]niciar/[D]etener/[R]einiciar/[C]ancelar): " opt
-    if [[ $opt == "i" ]] || [[ $opt == "I" ]];then
+    read -p "Elija la opción a realizar\n([E]stado/[I]niciar/[D]etener/[R]einiciar/[H]abilitar/Desa[b]ilitar/[C]ancelar): " opt
+    if [[ $opt == "e" ]] || [[ $opt == "E" ]];then
+        systemctl status httpd.service
+    elif [[ $opt == "i" ]] || [[ $opt == "I" ]];then
         systemctl start httpd.service
     elif [[ $opt == "d" ]] || [[ $opt == "D" ]];then
         systemctl stop httpd.service
     elif [[ $opt == "r" ]] || [[ $opt == "R" ]]; then
         systemctl restart httpd.service
+    elif [[ $opt == "h" ]] || [[ $opt == "H" ]];then
+        systemctl enable httpd.service
+    elif [[ $opt == "b" ]] || [[ $opt == "B" ]];then
+        systemctl disable httpd.service
     elif [[ $opt == "c" ]] || [[ $opt == "C" ]];then
         echo "Cancelado";
     else
