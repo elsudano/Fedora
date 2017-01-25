@@ -160,7 +160,7 @@ function config_phpini(){
         #http://php.net/post-max-size
         sed -i "s/post_max_size = .*$/post_max_size = $post/g" /etc/php.ini
     fi
-    read -p "¿Cuál será el tamaño maximo de de ocupación de memoría?: (sin unidades) " memory
+    read -p "¿Cuál será el tamaño maximo de la ocupación de memoría?: (sin unidades) " memory
     if [ -z $memory ];then
         echo "Operación cancelada"
     else
@@ -175,8 +175,14 @@ function config_phpini(){
     else
         #The path for which the cookie is valid.
         #http://php.net/session.cookie-path
-        sed -i "s/session.cookie_path = .*$/session.cookie_path = $session_file/g" /etc/php.ini
+        session_file=$(echo "$session_file" | sed 's/\//\\\//g')
+        sed -i "s/session\.cookie_path = .*$/session\.cookie_path = $session_file/g" /etc/php.ini
     fi
+    echo "Los valores asignados a las variables son los siguientes: "
+    cat /etc/php.ini | grep "upload_max_filesize = "
+    cat /etc/php.ini | grep "post_max_size = "
+    cat /etc/php.ini | grep "memory_limit = "
+    cat /etc/php.ini | grep "session.cookie_path = "
 }
 
 # Función que se encarga realizar la instalación mínima de PHP ver. 7.0
