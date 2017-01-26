@@ -20,6 +20,8 @@ SELINUX_FILE=/etc/selinux/config
 TEMP_FILE=/tmp/file.tmp
 ISSUE_FILE=/etc/issue
 PORT_COCKPIT_FILE=/etc/systemd/system/cockpit.socket.d/listen.conf
+NEWUSER=usuario
+NEWGROUP=usuarios
 
 # FUNCIONES
 
@@ -46,9 +48,36 @@ function is_root {
     fi
 }
 
+# Función que se encarga de crear cualquier usuario en el sistema, de manera básica hay parametros que se omiten en la creación del mismo investigar sobre el tema
 function create_user() {
-    echo "Indique el usuario que desea crear"
-    pause --with-msg;
+    echo "Crearemos un usuario del sistema"
+    read -p "Indique el usuario: (default:$NEWUSER) " NEWUSER
+    if [ -z $NEWUSER ];then
+        echo "el usuario es vacío"
+        NEWUSER=usuario
+    fi
+    read -p "Cuál es el nombre del usuario completo: " complete_name_user
+    read -p "Indique el grupo al que pertenece: (default:$NEWGROUP) " NEWGROUP
+    if [ -z $NEWGROUP ];then
+        echo "el grupo es vacío"
+        NEWGROUP=usuarios
+    fi
+    echo "El directorio home del usuario es: /home/$NEWUSER"
+    read -p "¿Es correcto? (Y/N): " opt
+    if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
+        read -p "Indique la ruta completa del directorio HOME: " PATH_HOME
+    fi
+    echo "Estos los datos del usuario: "
+    echo -e "Usuario:\t\t$NEWUSER"
+    echo -e "Nombre:\t\t$complete_name_user"
+    echo -e "Grupo principal:\t$NEWGROUP"
+    echo -e "Carpeta Home:\t$PATH_HOME"
+    if [[ $opt == "y" ]] || [[ $opt == "Y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+        #groupadd -f $NEWGROUP
+        #useradd -M -d $PATH_HOME -c "$complete_name_user" -g $NEWGROUP $NEWUSER
+        echo "Por favor introduzca la contraseña: "
+        #passwd $NEWUSER
+    fi
 }
 
 # Funciónm para habilitar/deshabilitar el SELinux
@@ -245,6 +274,7 @@ function menu() {
         ;;
         1)
         create_user;
+        pause;
         menu;
         ;;
         2)
