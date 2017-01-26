@@ -9,7 +9,7 @@
 
 
 # VARIABLES ESTATICAS
-DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
+DEPENDS=(ifconfig nmap find git iptables) # Dependencias necesarias
 DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
 MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
 MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
@@ -78,6 +78,99 @@ function check_depends() {
     done
 }
 
+# Función para generar una nueva regla en el firewall
+function new_rule(){
+    echo "# Función para generar una nueva regla en el firewall"
+}
+
+# Función para eliminar una regla en el firewall
+function delete_rule(){
+    echo "# Función para eliminar una regla en el firewall"
+}
+
+# Función para crear las reglas correspondientes al balanceador de carga de una sola vez usando las funciones anteriores
+function load_balancer_rules(){
+    echo "# Función para crear las reglas correspondientes al balanceador de carga de una sola vez usando las funciones anteriores"
+}
+
+# Función para crear las reglas correspondientes al frontal de una sola vez usando las funciones anteriores
+function front_rules(){
+    echo "# Función para crear las reglas correspondientes al frontal de una sola vez usando las funciones anteriores"
+}
+
+# Función para crear las reglas correspondientes al repositorio de una sola vez usando las funciones anteriores
+function repository_rules(){
+    echo "# Función para crear las reglas correspondientes al repositorio de una sola vez usando las funciones anteriores"
+}
+
+# Función que muestra todas las reglas del firewall
+function show_rules(){
+    echo "# Función que muestra todas las reglas del firewall"
+}
+
+# Función para arrancar y detener el servicio de Apache
+function start_stop_iptables(){
+    read -p "Elija la opción a realizar\n([E]stado/[I]niciar/[D]etener/[R]einiciar/[H]abilitar/Desa[b]ilitar/[C]ancelar): " opt
+    if [[ $opt == "e" ]] || [[ $opt == "E" ]];then
+        systemctl status httpd.service
+    elif [[ $opt == "i" ]] || [[ $opt == "I" ]];then
+        systemctl start httpd.service
+    elif [[ $opt == "d" ]] || [[ $opt == "D" ]];then
+        systemctl stop httpd.service
+    elif [[ $opt == "r" ]] || [[ $opt == "R" ]]; then
+        systemctl restart httpd.service
+    elif [[ $opt == "h" ]] || [[ $opt == "H" ]];then
+        systemctl enable httpd.service
+    elif [[ $opt == "b" ]] || [[ $opt == "B" ]];then
+        systemctl disable httpd.service
+    elif [[ $opt == "c" ]] || [[ $opt == "C" ]];then
+        echo "Cancelado";
+    else
+        clear;
+        start_stop_iptables;
+    fi
+}
+
+# Función que permite redirigir el tráfico de un puerto en concreto a una maquina remota de la misma red
+function port_fordwarding(){
+    echo "# Función que permite redirigir el tráfico de un puerto en concreto a una maquina remota de la misma red"
+    read -p "Cuál es el host remoto al que se desea realizar las peticiones: " host
+    if [ -z $host ];then
+        echo "El host no puede ser vacío"
+        port_fordwarding;
+    fi
+    read -p "Cuál es el puerto del host remoto donde queremos realizar las peticiones: " port
+    if [ -z $port ];then
+        echo "El puerto no puede ser vacío"
+        port_fordwarding;
+    fi
+    # esta parte se puede automatizar preguntando al sistema por la ip privada
+    read -p "Cuál es la dirección ip de esta máquina: " ip
+    if [ -z $ip ];then
+        echo "La IP no puede estar vacía"
+        port_fordwarding;
+    fi
+    echo "Estos son los datos: "
+    echo -e "Host Remoto:\t$host"
+    echo -e "Puerto Remoto:\t$port"
+    echo -e "IP Local:\t$ip"
+    read -p "Desea añadir las reglas: (Y/N)" opt
+    if [ $opt == "s" ] || [ $opt == "S" ] || [ $opt == "y" ] || [ $opt == "Y" ];then
+        echo 1 > $(buscar ip_forward)
+        iptables -F
+        iptables -t nat -F
+        iptables -X
+        iptables -t nat -A PREROUTING -p tcp --dport $port -j DNAT --to-destination $host:$port
+        iptables -t nat -A POSTROUTING -p tcp -d $host --dport $port -j SNAT --to-source $ip
+    else
+        echo "Se Canceló la operación"
+    fi
+}
+
+# Función que restaura el sistema a su estado normal, despúes de realizar las pruebas
+function port_fordwarding_restore(){
+    echo "# Función que restaura el sistema a su estado normal, despúes de realizar las pruebas"
+}
 
 # Función para presentar el Menú
 # Sin parámetros de entrada
@@ -86,14 +179,17 @@ function menu() {
     echo
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
-    echo "           * 1.-                                  *"
-    echo "           * 2.-                                  *"
-    echo "           * 3.-                                  *"
-    echo "           * 4.-                                  *"
-    echo "           * 5.-                                  *"
-    echo "           * 6.-                                  *"
-    echo "           * 7.-                                  *"
-    echo "           * 8.-                                  *"
+    echo "           * 1.- Comprobar dependencias           *"
+    echo "           * 2.- Crear regla de iptables          *"
+    echo "           * 3.- Quitar regla de iptables         *"
+    echo "           * 4.- Crear Reglas para Balanceador    *"
+    echo "           * 5.- Crear Reglas para Frontal        *"
+    echo "           * 6.- Crear Reglas para Repositorio    *"
+    echo "           * 7.- Mostrar reglas de IpTables       *"
+    echo "           * 8.- Habilitar/Deshabilitar IpTables  *"
+    echo "           *                                      *"
+    echo "           * 9.- Función Extra                    *"
+    echo "           * 10.- Deshacer Extra                  *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -104,42 +200,52 @@ function menu() {
         exit;
         ;;
         1)
-
+        check_depends;
         pause;
         menu;
         ;;
         2)
-
+        new_rule;
         pause;
         menu;
         ;;
         3)
-
+        delete_rule;
         pause;
         menu;
         ;;
         4)
-
+        load_balancer_rules;
         pause;
         menu;
         ;;
         5)
-
+        front_rules;
         pause;
         menu;
         ;;
         6)
-
+        repository_rules;
         pause;
         menu;
         ;;
         7)
-
+        show_rules;
         pause;
         menu;
         ;;
         8)
-
+        start_stop_iptables;
+        pause;
+        menu;
+        ;;
+        9)
+        port_fordwarding;
+        pause;
+        menu;
+        ;;
+        10)
+        port_fordwarding_restore;
         pause;
         menu;
         ;;
