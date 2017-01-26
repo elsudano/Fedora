@@ -9,7 +9,7 @@
 
 
 # VARIABLES ESTATICAS
-DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
+DEPENDS=(ifconfig nmap find git nginx) # Dependencias necesarias
 DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
 MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
 MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
@@ -78,6 +78,11 @@ function check_depends() {
     done
 }
 
+# Función para la instalación básica de NGINX
+function install_nginx(){
+    echo "Instalando NGINX..."
+    dnf -y install nginx.x86_64
+}
 
 # Función para presentar el Menú
 # Sin parámetros de entrada
@@ -86,8 +91,8 @@ function menu() {
     echo
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
-    echo "           * 1.-                                  *"
-    echo "           * 2.-                                  *"
+    echo "           * 1.- Comprobar dependencias           *"
+    echo "           * 2.- Install NGINX                    *"
     echo "           * 3.-                                  *"
     echo "           * 4.-                                  *"
     echo "           * 5.-                                  *"
@@ -104,12 +109,12 @@ function menu() {
         exit;
         ;;
         1)
-
+        check_depends;
         pause;
         menu;
         ;;
         2)
-
+        install_nginx;
         pause;
         menu;
         ;;
