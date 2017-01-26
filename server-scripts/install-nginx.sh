@@ -17,6 +17,8 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
+CONF_FILE_NGINX=/etc/nginx/nginx.conf
+SERVER_IP=127.0.0.1
 
 # FUNCIONES
 
@@ -84,6 +86,88 @@ function install_nginx(){
     dnf -y install nginx.x86_64
 }
 
+# Función para configurar NGINX
+function config_nginx(){
+    echo "Comenzamos a configurar Nginx"
+    CONF_FILE_NGINX=$(buscar nginx.conf)
+    if [ -n $CONF_FILE_NGINX ];then
+        CONF_FILE_NGINX=/etc/nginx/nginx.conf
+    fi
+    if [ -e $CONF_FILE_NGINX ];then
+        cp --backup=numbered $CONF_FILE_NGINX $CONF_FILE_NGINX.bak
+        rm $CONF_FILE_NGINX
+    fi
+    echo "# For more information on configuration, see:" >> $CONF_FILE_NGINX
+    echo "#   * Official English Documentation: http://nginx.org/en/docs/" >> $CONF_FILE_NGINX
+    echo "#   * Official Russian Documentation: http://nginx.org/ru/docs/" >> $CONF_FILE_NGINX
+    echo >> $CONF_FILE_NGINX
+    echo "user nginx;" >> $CONF_FILE_NGINX
+    echo "worker_processes auto;" >> $CONF_FILE_NGINX
+    echo "error_log /var/log/nginx/error.log;" >> $CONF_FILE_NGINX
+    echo "pid /run/nginx.pid;" >> $CONF_FILE_NGINX
+    echo "events {" >> $CONF_FILE_NGINX
+    echo -e "\tworker_connections  1024;" >> $CONF_FILE_NGINX
+    echo -e "}" >> $CONF_FILE_NGINX
+    echo >> $CONF_FILE_NGINX
+    echo -e "http {" >> $CONF_FILE_NGINX
+    echo -e "\tupstream apaches {" >> $CONF_FILE_NGINX
+    echo -e "\t\tip_hash;" >> $CONF_FILE_NGINX
+    FIN="True"
+    while [[ $FIN == "True" ]]; do
+        read -p "Por favor indique la IP del servidor: " SERVER_IP
+        if [ -n $SERVER_IP ];then
+            echo -e "\t\tserver $SERVER_IP max_fails=3 fail_timeout=5s;" >> $CONF_FILE_NGINX
+        fi
+        read -p "Deseá agregar otro servidor: (Y/N)" opt
+        if [[ $opt == "n" ]] || [[ $opt == "N" ]];then
+            FIN="False";
+        fi
+    done
+    #echo -e "\t\tserver 192.168.50.157;" >> $CONF_FILE_NGINX
+    echo -e "\t\tkeepalive 3;" >> $CONF_FILE_NGINX
+    echo -e "\t}" >> $CONF_FILE_NGINX
+    echo -e "\tserver{" >> $CONF_FILE_NGINX
+    echo -e "\t\tlisten 80;" >> $CONF_FILE_NGINX
+    echo -e "\t\tserver_name m3lb;" >> $CONF_FILE_NGINX
+    echo -e "\t\taccess_log /var/log/nginx/access.log;" >> $CONF_FILE_NGINX
+    echo -e "\t\terror_log /var/log/nginx/error.log;" >> $CONF_FILE_NGINX
+    echo -e "\t\troot /var/www/;" >> $CONF_FILE_NGINX
+    echo -e "\t\tlocation /" >> $CONF_FILE_NGINX
+    echo -e "\t\t{" >> $CONF_FILE_NGINX
+    echo -e "\t\t\tproxy_pass http://apaches;" >> $CONF_FILE_NGINX
+    echo -e "\t\t\tproxy_set_header Host \$host:\$proxy_port;" >> $CONF_FILE_NGINX
+    echo -e "\t\t\tproxy_set_header X-Real-IP \$remote_addr;" >> $CONF_FILE_NGINX
+    echo -e "\t\t\tproxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;" >> $CONF_FILE_NGINX
+    echo -e "\t\t\tproxy_http_version 1.1;" >> $CONF_FILE_NGINX
+    echo -e "\t\t\tproxy_set_header Connection \"\";" >> $CONF_FILE_NGINX
+    echo -e "\t\t}" >> $CONF_FILE_NGINX
+    echo -e "\t}" >> $CONF_FILE_NGINX
+    echo "}" >> $CONF_FILE_NGINX
+}
+
+# Función para arrancar y detener el servicio de Nginx
+function start_stop_nginx(){
+    read -p "Elija la opción a realizar\n([E]stado/[I]niciar/[D]etener/[R]einiciar/[H]abilitar/Desa[b]ilitar/[C]ancelar): " opt
+    if [[ $opt == "e" ]] || [[ $opt == "E" ]];then
+        systemctl status nginx.service
+    elif [[ $opt == "i" ]] || [[ $opt == "I" ]];then
+        systemctl start nginx.service
+    elif [[ $opt == "d" ]] || [[ $opt == "D" ]];then
+        systemctl stop nginx.service
+    elif [[ $opt == "r" ]] || [[ $opt == "R" ]]; then
+        systemctl restart nginx.service
+    elif [[ $opt == "h" ]] || [[ $opt == "H" ]];then
+        systemctl enable nginx.service
+    elif [[ $opt == "b" ]] || [[ $opt == "B" ]];then
+        systemctl disable nginx.service
+    elif [[ $opt == "c" ]] || [[ $opt == "C" ]];then
+        echo "Cancelado";
+    else
+        clear;
+        start_stop_nginx;
+    fi
+}
+
 # Función para presentar el Menú
 # Sin parámetros de entrada
 function menu() {
@@ -93,11 +177,11 @@ function menu() {
     echo "           *          Esto es el Menú             *"
     echo "           * 1.- Comprobar dependencias           *"
     echo "           * 2.- Install NGINX                    *"
-    echo "           * 3.-                                  *"
+    echo "           * 3.- Crear configuración de Nginx     *"
     echo "           * 4.-                                  *"
     echo "           * 5.-                                  *"
     echo "           * 6.-                                  *"
-    echo "           * 7.-                                  *"
+    echo "           * 7.- Habilitar/Deshabilita Nginx      *"
     echo "           * 8.-                                  *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
@@ -119,7 +203,7 @@ function menu() {
         menu;
         ;;
         3)
-
+        config_nginx;
         pause;
         menu;
         ;;
@@ -139,8 +223,8 @@ function menu() {
         menu;
         ;;
         7)
-
-        pause;
+        start_stop_nginx;
+        pause --with-msg;
         menu;
         ;;
         8)
