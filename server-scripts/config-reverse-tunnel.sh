@@ -209,7 +209,7 @@ function menu() {
         ;;
         5)
         show_tunnels;
-        pause;
+        pause --with-msg;
         menu;
         ;;
         6)
