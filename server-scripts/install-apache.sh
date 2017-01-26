@@ -106,12 +106,12 @@ function create_data_root_path(){
 function create_user_and_group(){
     echo "Crearemos un usuario para apache"
     read -p "Indique el usuario: (default:$APACHE_USER) " APACHE_USER
-    if [ -n $APACHE_USER ];then
+    if [ -z $APACHE_USER ];then
         APACHE_USER=gestapa
     fi
     read -p "Cuál es el nombre del usuario completo: " complete_name_user
     read -p "Indique el grupo al que pertenece: (default:$APACHE_GROUP) " APACHE_GROUP
-    if [ -n $APACHE_GROUP ];then
+    if [ -z $APACHE_GROUP ];then
         APACHE_GROUP=datawww
     fi
     echo "El directorio donde se alojan las webs es: $PATH_DATA_WEB"
