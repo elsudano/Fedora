@@ -17,6 +17,7 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
+HTTP_DONWLOAD_JAVA=http://javadl.oracle.com/webapps/download/AutoDL?BundleId=218822_e9e7ea248e2c4826b92b3f075a80e441
 
 # FUNCIONES
 
@@ -78,6 +79,15 @@ function check_depends() {
     done
 }
 
+# Función que se encarga de descargar y de instalar java sin configuración en el sistema
+function install_java() {
+    echo "Descargando Java..."
+    wget $HTTP_DONWLOAD_JAVA -O $TEMP_FILE
+    mv $TEMP_FILE java.rpm
+    echo "Instalando Java..."
+    dnf -y install java.rpm
+    rm -f java.rpm
+}
 
 # Función para presentar el Menú
 # Sin parámetros de entrada
@@ -86,14 +96,10 @@ function menu() {
     echo
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
-    echo "           * 1.-                                  *"
-    echo "           * 2.-                                  *"
+    echo "           * 1.- Comprobar dependencias           *"
+    echo "           * 2.- Instalar Java de Oracle          *"
     echo "           * 3.-                                  *"
     echo "           * 4.-                                  *"
-    echo "           * 5.-                                  *"
-    echo "           * 6.-                                  *"
-    echo "           * 7.-                                  *"
-    echo "           * 8.-                                  *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -104,12 +110,12 @@ function menu() {
         exit;
         ;;
         1)
-
+        check_depends;
         pause;
         menu;
         ;;
         2)
-
+        install_java;
         pause;
         menu;
         ;;
@@ -119,26 +125,6 @@ function menu() {
         menu;
         ;;
         4)
-
-        pause;
-        menu;
-        ;;
-        5)
-
-        pause;
-        menu;
-        ;;
-        6)
-
-        pause;
-        menu;
-        ;;
-        7)
-
-        pause;
-        menu;
-        ;;
-        8)
 
         pause;
         menu;
