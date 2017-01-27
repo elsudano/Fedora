@@ -116,6 +116,8 @@ function install_modules_php56() {
     dnf -y install php56w-xmlrpc.x86_64;
     # xsl wddx shmop xmlwriter xmlreader xml modules
     dnf -y install php56w-xml.x86_64;
+    # gd images
+    dnf -y install php56w-gd.x86_64;
     systemctl restart httpd.service;
 }
 
@@ -135,6 +137,8 @@ function install_modules_php70() {
     dnf -y install php-xmlrpc.x86_64;
     # xsl wddx shmop xmlwriter xmlreader xml modules
     dnf -y install php-xml.x86_64;
+    # gd images
+    dnf -y install php-gd.x86_64;
     systemctl restart httpd.service;
 }
 
