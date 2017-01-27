@@ -19,6 +19,7 @@ TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
 CONF_FILE_NGINX=/etc/nginx/nginx.conf
 SERVER_IP=127.0.0.1
+SERVER_NAME=vcomm
 
 # FUNCIONES
 
@@ -128,9 +129,12 @@ function config_nginx(){
     echo -e "\t}" >> $CONF_FILE_NGINX
     echo -e "\tserver{" >> $CONF_FILE_NGINX
     echo -e "\t\tlisten 80;" >> $CONF_FILE_NGINX
-    echo -e "\t\tserver_name m3lb;" >> $CONF_FILE_NGINX
-    echo -e "\t\taccess_log /var/log/nginx/access.log;" >> $CONF_FILE_NGINX
-    echo -e "\t\terror_log /var/log/nginx/error.log;" >> $CONF_FILE_NGINX
+    read -p "Por favor indique el nombre del servidor: " SERVER_NAME
+    if [ -n $SERVER_NAME ];then
+        echo -e "\t\tserver_name $SERVER_NAME;" >> $CONF_FILE_NGINX
+    fi
+    echo -e "\t\taccess_log /var/log/nginx/$SERVER_NAME-access.log;" >> $CONF_FILE_NGINX
+    echo -e "\t\terror_log /var/log/nginx/$SERVER_NAME-error.log;" >> $CONF_FILE_NGINX
     echo -e "\t\troot /var/www/;" >> $CONF_FILE_NGINX
     echo -e "\t\tlocation /" >> $CONF_FILE_NGINX
     echo -e "\t\t{" >> $CONF_FILE_NGINX
