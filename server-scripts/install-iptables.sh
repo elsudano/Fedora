@@ -78,6 +78,13 @@ function check_depends() {
     done
 }
 
+# Función para instalar IpTables
+function install_iptables(){
+    echo "# Función para instalar IpTables"
+    dnf -y install iptables iptables-utils iptables-services
+}
+
+
 # Función para generar una nueva regla en el firewall
 function new_rule(){
     echo "# Función para generar una nueva regla en el firewall"
@@ -180,16 +187,17 @@ function menu() {
     echo "           ****************************************"
     echo "           *          Esto es el Menú             *"
     echo "           * 1.- Comprobar dependencias           *"
-    echo "           * 2.- Crear regla de iptables          *"
-    echo "           * 3.- Quitar regla de iptables         *"
-    echo "           * 4.- Crear Reglas para Balanceador    *"
-    echo "           * 5.- Crear Reglas para Frontal        *"
-    echo "           * 6.- Crear Reglas para Repositorio    *"
-    echo "           * 7.- Mostrar reglas de IpTables       *"
-    echo "           * 8.- Habilitar/Deshabilitar IpTables  *"
+    echo "           * 2.- Instalar iptables                *"
+    echo "           * 3.- Crear regla de iptables          *"
+    echo "           * 4.- Quitar regla de iptables         *"
+    echo "           * 5.- Crear Reglas para Balanceador    *"
+    echo "           * 6.- Crear Reglas para Frontal        *"
+    echo "           * 7.- Crear Reglas para Repositorio    *"
+    echo "           * 8.- Mostrar reglas de IpTables       *"
+    echo "           * 9.- Habilitar/Deshabilitar IpTables  *"
     echo "           *                                      *"
-    echo "           * 9.- Función Extra                    *"
-    echo "           * 10.- Deshacer Extra                  *"
+    echo "           * 10.- Función Extra                   *"
+    echo "           * 11.- Deshacer Extra                  *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -205,46 +213,51 @@ function menu() {
         menu;
         ;;
         2)
-        new_rule;
+        install_iptables;
         pause;
         menu;
         ;;
         3)
-        delete_rule;
+        new_rule;
         pause;
         menu;
         ;;
         4)
-        load_balancer_rules;
+        delete_rule;
         pause;
         menu;
         ;;
         5)
-        front_rules;
+        load_balancer_rules;
         pause;
         menu;
         ;;
         6)
-        repository_rules;
+        front_rules;
         pause;
         menu;
         ;;
         7)
-        show_rules;
+        repository_rules;
         pause;
         menu;
         ;;
         8)
-        start_stop_iptables;
+        show_rules;
         pause;
         menu;
         ;;
         9)
-        port_fordwarding;
+        start_stop_iptables;
         pause;
         menu;
         ;;
         10)
+        port_fordwarding;
+        pause;
+        menu;
+        ;;
+        11)
         port_fordwarding_restore;
         pause;
         menu;
