@@ -83,16 +83,22 @@ function install_webmin(){
     wget http://www.webmin.com/jcameron-key.asc -O /tmp/key.asc
     rpm --import /tmp/key.asc
     dnf -y install webmin
+    systemctl daemon-reload
+    systemctl enable webmin.service
+    systemctl start webmin.service
 }
 
 # Función que se encarga de la configuración miníma de WebMin
 function config_webmin(){
     echo "Configuración"
+    #wget http://theme.winfuture.it/bwtheme.wbt.gz -O $TEMP_FILE
+    #/usr/libexec/webmin/bootstrap
 }
 
 # Función que se encarga de comprobar si webmin está instalado con todos sus módulos
 function check_instalation_webmin(){
     echo "La instalación de WebMin está:"
+    systemctl daemon-reload
     systemctl status webmin.service
 }
 
