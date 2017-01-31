@@ -15,11 +15,21 @@ MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
 MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
 
 # VARIABLES GLOBALES
+# ip de pruebas
 TEST_IP=62.15.168.50
+# fichero temporal
 TEMP_FILE=/tmp/file.tmp
+# cantidad de pines que se realizan
+NUMBER_OF_PING=120
+# en segundos
+TIME_BETWEEN_PING=600
+# ruta del fichero de keys
 PATH_KEY_FILE=""
+# usuario de conexión remoto
 REMOTE_USER=""
+# dirección del host remoto para la conexión
 REMOTE_HOST=""
+# puerto del host remoto para la conexión
 REMOTE_PORT=""
 
 # FUNCIONES
@@ -85,7 +95,7 @@ function generate_keys(){
     read -p "Un comentario descriptivo: " comment
     #echo -e "ssh-keygen -t rsa -b 2048 -C $comment -f $PATH_KEY_FILE"
     if [ -n "$PATH_KEY_FILE" ];then
-        ssh-keygen -t rsa -b 2048 -C $comment -f $PATH_KEY_FILE
+        ssh-keygen -t rsa -b 2048 -C "$comment" -f $PATH_KEY_FILE
     else
         echo "Tiene que indicar la ruta del fichero de claves"
     fi
@@ -101,11 +111,11 @@ function copy_public_key(){
     read -p "Introduzca el puerto de conexión (por defecto 22) " REMOTE_PORT
     local temp="$PATH_KEY_FILE.pub"
     if [ -z "$REMOTE_PORT" ];then
-        #echo "ssh-copy-id -i $PATH_KEY_FILE.pub $REMOTE_HOST"
+        #echo "ssh-copy-id -i $temp $REMOTE_USER@$REMOTE_HOST"
         ssh-copy-id -i $temp $REMOTE_USER@$REMOTE_HOST
     else
-        #echo "ssh-copy-id -i $PATH_KEY_FILE.pub $REMOTE_HOST -p $REMOTE_PORT"
-        ssh-copy-id -i $temp $REMOTE_HOST -p $REMOTE_USER@$REMOTE_PORT
+        #echo "ssh-copy-id -i $temp $REMOTE_USER@$REMOTE_HOST -p $REMOTE_PORT"
+        ssh-copy-id -i $temp $REMOTE_USER@$REMOTE_HOST -p $REMOTE_PORT
     fi
 }
 
@@ -136,7 +146,7 @@ function create_reverse_tunnel(){
     read -p "Introduzca el puerto abierto en el host remoto: " remote_open_port
     read -p "Introduzca el puerto de escucha en localhost: " local_listen_port
     #echo "ssh -i $PATH_KEY_FILE -N -L $local_listen_port:localhost:$remote_open_port $REMOTE_HOST -p $REMOTE_PORT &"
-    ssh -o "StrictHostKeyChecking no" -i $PATH_KEY_FILE -N -L $local_listen_port:localhost:$remote_open_port $REMOTE_USER@$REMOTE_HOST -p $REMOTE_PORT &
+    ssh -o "StrictHostKeyChecking no" -i $PATH_KEY_FILE -N -L $local_listen_port:localhost:$remote_open_port $REMOTE_USER@$REMOTE_HOST -p $REMOTE_PORT "'ping $TEST_IP -c $NUMBER_OF_PING -i $TIME_BETWEEN_PING'" &
 }
 
 # Función que se encarga borrar los ficheros de las claves privadas
