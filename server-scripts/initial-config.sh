@@ -245,6 +245,11 @@ function install_teamviewer() {
     dnf -y install /tmp/teamviewer.i686.rpm
 }
 
+# Función para instalar el servidor de VNC
+function install_tigerVNC() {
+    echo "# Función para instalar el servidor de VNC"
+}
+
 # Función para presentar el Menú
 # Sin parámetros de entrada
 function menu() {
@@ -260,9 +265,10 @@ function menu() {
     echo "           * 6.- Prueba de internet               *"
     echo "           * 7.- Instalar NMTui                   *"
     echo "           * 8.- Instalar TeamViewer              *"
-    echo "           * 9.- Comprobar dependencias           *"
-    echo "           * 10.- Cambiar puerto de Cockpit       *"
-    echo "           * 11.- Crear mensage de ISSUE          *"
+    echo "           * 9.- Instalar TigerVNC                *"
+    echo "           * 10.- Comprobar dependencias          *"
+    echo "           * 11.- Cambiar puerto de Cockpit       *"
+    echo "           * 12.- Crear mensage de ISSUE          *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -312,16 +318,21 @@ function menu() {
         menu;
         ;;
         9)
-        check_depends;
+
         pause;
         menu;
         ;;
         10)
-        change_cockpit_port;
+        check_depends;
         pause;
         menu;
         ;;
         11)
+        change_cockpit_port;
+        pause;
+        menu;
+        ;;
+        12)
         issue_msg "V·COMM Madrid";
         pause;
         menu;
