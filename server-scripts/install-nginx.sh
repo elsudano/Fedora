@@ -17,8 +17,9 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
-CONF_FILE_NGINX=/etc/nginx/nginx.conf
+CONF_FILE_NGINX=/etc/nginx/sites-available/nginx.conf
 SERVER_IP=127.0.0.1
+SERVER_PORT=80
 SERVER_NAME=vcomm
 
 # FUNCIONES
@@ -91,13 +92,22 @@ function install_nginx(){
 function config_nginx(){
     echo "Comenzamos a configurar Nginx"
     CONF_FILE_NGINX=$(buscar nginx.conf)
+    read -p "Por favor indique el nombre del servidor: " SERVER_NAME
     if [ -n $CONF_FILE_NGINX ];then
-        CONF_FILE_NGINX=/etc/nginx/nginx.conf
+        SERVER_NAME=nginx_local_es
+    else
+        SERVER_NAME=$(echo $SERVER_NAME | sed 's/ /_/g' |  sed 's/./_/g')
+    fi
+    if [ -n $CONF_FILE_NGINX ];then
+        CONF_FILE_NGINX=/etc/nginx/sites-available/$SERVER_NAME.conf
     fi
     if [ -e $CONF_FILE_NGINX ];then
         cp --backup=numbered $CONF_FILE_NGINX $CONF_FILE_NGINX.bak
         rm $CONF_FILE_NGINX
     fi
+    # estas 2 lineas se pueden preguntar al usuario o se pueden buscar en el sistema
+    mkdir /etc/nginx/sites-available
+    mkdir /etc/nginx/sites-enabled
     echo "# For more information on configuration, see:" >> $CONF_FILE_NGINX
     echo "#   * Official English Documentation: http://nginx.org/en/docs/" >> $CONF_FILE_NGINX
     echo "#   * Official Russian Documentation: http://nginx.org/ru/docs/" >> $CONF_FILE_NGINX
@@ -111,13 +121,17 @@ function config_nginx(){
     echo -e "}" >> $CONF_FILE_NGINX
     echo >> $CONF_FILE_NGINX
     echo -e "http {" >> $CONF_FILE_NGINX
-    echo -e "\tupstream apaches {" >> $CONF_FILE_NGINX
+    echo -e "\tupstream balanced_servers {" >> $CONF_FILE_NGINX
     echo -e "\t\tip_hash;" >> $CONF_FILE_NGINX
     FIN="True"
     while [[ $FIN == "True" ]]; do
-        read -p "Por favor indique la IP del servidor: " SERVER_IP
+        read -p "Por favor indique la dirección del servidor: " SERVER_IP
+        read -p "Cuál será el puerto en el que escucha: " SERVER_PORT
+        if [ -z $SERVER_PORT ];then
+            SERVER_PORT=80
+        fi
         if [ -n $SERVER_IP ];then
-            echo -e "\t\tserver $SERVER_IP max_fails=3 fail_timeout=5s;" >> $CONF_FILE_NGINX
+            echo -e "\t\tserver $SERVER_IP:$SERVER_PORT max_fails=3 fail_timeout=5s;" >> $CONF_FILE_NGINX
         fi
         read -p "Deseá agregar otro servidor: (Y/N)" opt
         if [[ $opt == "n" ]] || [[ $opt == "N" ]];then
@@ -128,18 +142,31 @@ function config_nginx(){
     echo -e "\t\tkeepalive 3;" >> $CONF_FILE_NGINX
     echo -e "\t}" >> $CONF_FILE_NGINX
     echo -e "\tserver{" >> $CONF_FILE_NGINX
-    echo -e "\t\tlisten 80;" >> $CONF_FILE_NGINX
-    read -p "Por favor indique el nombre del servidor: " SERVER_NAME
+    read -p "Cuál será el puerto en el que escucha: " SERVER_PORT
+    if [ -n $SERVER_PORT ];then
+        echo -e "\t\tlisten $SERVER_PORT;" >> $CONF_FILE_NGINX
+    fi
+    read -p "Cuál será el puerto SSL en el que escucha: " SERVER_PORT
+    if [ -n $SERVER_PORT ];then
+        echo -e "\t\tlisten $SERVER_PORT ssl;" >> $CONF_FILE_NGINX
+    fi
     if [ -n $SERVER_NAME ];then
         echo -e "\t\tserver_name $SERVER_NAME;" >> $CONF_FILE_NGINX
     fi
+    echo -e "\t\tssl on;" >> $CONF_FILE_NGINX
+    # Esto añade el certificado en la configuración
+    echo -e "\t\tssl_certificate\t\t/etc/pki/tls/certs/$SERVER_NAME/server.crt;" >> $CONF_FILE_NGINX
+    # Esto añade la parte privada del certificado
+    echo -e "\t\tssl_certificate_key\t\t/etc/pki/tls/private/$SERVER_NAME/server.key;" >> $CONF_FILE_NGINX
+    # Esto añade la lista de Autoridades certificadoras necesarias para los certificados
+    echo -e "\t\tssl_trusted_certificate\t\t/etc/pki/ca-trust/$SERVER_NAME/ca-certs.pem;" >> $CONF_FILE_NGINX
     echo -e "\t\taccess_log /var/log/nginx/$SERVER_NAME-access.log;" >> $CONF_FILE_NGINX
     echo -e "\t\terror_log /var/log/nginx/$SERVER_NAME-error.log;" >> $CONF_FILE_NGINX
     echo -e "\t\troot /var/www/;" >> $CONF_FILE_NGINX
     echo -e "\t\tlocation /" >> $CONF_FILE_NGINX
     echo -e "\t\t{" >> $CONF_FILE_NGINX
-    echo -e "\t\t\tproxy_pass http://apaches;" >> $CONF_FILE_NGINX
-    echo -e "\t\t\tproxy_set_header Host \$host:\$proxy_port;" >> $CONF_FILE_NGINX
+    echo -e "\t\t\tproxy_pass http://balanced_servers;" >> $CONF_FILE_NGINX
+    echo -e "\t\t\tproxy_set_header Host \$host:\$server_port;" >> $CONF_FILE_NGINX
     echo -e "\t\t\tproxy_set_header X-Real-IP \$remote_addr;" >> $CONF_FILE_NGINX
     echo -e "\t\t\tproxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;" >> $CONF_FILE_NGINX
     echo -e "\t\t\tproxy_http_version 1.1;" >> $CONF_FILE_NGINX
@@ -147,6 +174,10 @@ function config_nginx(){
     echo -e "\t\t}" >> $CONF_FILE_NGINX
     echo -e "\t}" >> $CONF_FILE_NGINX
     echo "}" >> $CONF_FILE_NGINX
+    cat $CONF_FILE_NGINX
+    echo -e "r\nPor favor recuerde copiar los ficheros de certificados SSL"
+    echo -e "en las rutas que se especifican en el fichero de configuración,"
+    echo -e "y asignar los permisos correspondientes a los mismos"
 }
 
 # Función para arrancar y detener el servicio de Nginx
