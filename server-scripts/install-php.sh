@@ -173,7 +173,7 @@ function config_phpini(){
         #http://php.net/memory-limit
         sed -i "s/memory_limit = .*$/memory_limit = $memory/g" /etc/php.ini
     fi
-    read -p "¿Cuál es la ruta absoluta donde se almacenarán los ficheros de session?: " session_file
+    read -e -p "¿Cuál es la ruta absoluta donde se almacenarán los ficheros de session?: " session_file
     if [ -z $session_file ];then
         echo "Operación cancelada"
     else

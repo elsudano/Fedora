@@ -65,7 +65,7 @@ function create_user() {
     echo "El directorio home del usuario es: /home/$NEWUSER"
     read -p "¿Es correcto? (Y/N): " opt
     if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
-        read -p "Indique la ruta completa del directorio HOME: " PATH_HOME
+        read -e -p "Indique la ruta completa del directorio HOME: " PATH_HOME
     fi
     echo "Estos los datos del usuario: "
     echo -e "Usuario:\t\t$NEWUSER"

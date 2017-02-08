@@ -82,12 +82,12 @@ function create_data_root_path(){
     if [ -e $PATH_DATA_WEB ] && [ -d $PATH_DATA_WEB ];then
         read -p "Desea utilizar el directorio $PATH_DATA_WEB como root web? (Y/N): " opt
         if [ $opt == "n" ] || [ $opt == "N" ];then
-            read -p "Indique el directorio root web:" PATH_DATA_WEB
+            read -e -p "Indique el directorio root web:" PATH_DATA_WEB
             mkdir $PATH_DATA_WEB
             echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
         fi
     else
-        read -p "Indique el directorio root web: (default:$PATH_DATA_WEB) " PATH_DATA_WEB
+        read -e -p "Indique el directorio root web: (default:$PATH_DATA_WEB) " PATH_DATA_WEB
         if [ -n $PATH_DATA_WEB ];then
             PATH_DATA_WEB="/datawww/html"
         fi

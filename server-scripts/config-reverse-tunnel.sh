@@ -91,7 +91,7 @@ function check_depends() {
 
 # Función que genera las claves pareadas de rsa para la conexión sin contraseña al servidor ssh
 function generate_keys(){
-    read -p "Por favor indique la dirección del fichero: " PATH_KEY_FILE
+    read -e -p "Por favor indique la dirección del fichero: " PATH_KEY_FILE
     read -p "Un comentario descriptivo: " comment
     #echo -e "ssh-keygen -t rsa -b 2048 -C $comment -f $PATH_KEY_FILE"
     if [ -n "$PATH_KEY_FILE" ];then
@@ -104,7 +104,7 @@ function generate_keys(){
 # Función que copia la parte publica de la clave al servidor remoto
 function copy_public_key(){
     if [ -z "$PATH_KEY_FILE" ];then
-        read -p "Introduzca el path completo del fichero (sin .pub): " PATH_KEY_FILE
+        read -e -p "Introduzca el path completo del fichero (sin .pub): " PATH_KEY_FILE
     fi
     read -p "Introduzca el usuario de conexión remota: " REMOTE_USER
     read -p "Introduzca la dirección del host remoto: " REMOTE_HOST
@@ -137,7 +137,7 @@ function create_reverse_tunnel(){
             menu;
         fi
     else
-        read -p "Introduzca el path completo del fichero (sin .pub): " PATH_KEY_FILE
+        read -e -p "Introduzca el path completo del fichero (sin .pub): " PATH_KEY_FILE
         read -p "Introduzca el usuario de conexión remota: " REMOTE_USER
         read -p "Introduzca la dirección del host remoto: " REMOTE_HOST
         read -p "Introduzca el puerto de conexión (por defecto 22): " REMOTE_PORT
