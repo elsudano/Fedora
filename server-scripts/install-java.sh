@@ -44,41 +44,6 @@ function is_root {
     fi
 }
 
-function create_user() {
-    echo "Indique el usuario que desea crear"
-    pause --with-msg;
-}
-
-# Funcion de wrapper para find
-# parámetro de entrada $1 lo que queremos buscar
-function buscar(){
-    if [ $1 != "" ]; then
-        local retval=$(find / -name $1)
-    else
-        echo "Faltán parámetros para buscar"
-    fi
-    echo $retval
-}
-
-# Función que se encarga de buscar las dependencias
-function check_depends() {
-    for depend in ${DEPENDS[@]}
-    do
-        hit=0
-        for dir in ${DIRS[@]}
-        do
-            if [ -x "$dir/$depend" ]; then
-                echo "Dependencia encontrada: $depend"
-                hit=1
-                break;
-            fi
-        done
-        if [ $hit == 0 ]; then
-            echo "Dependencia NO encontrada: $depend"
-        fi
-    done
-}
-
 # Función que se encarga de descargar y de instalar java sin configuración en el sistema
 function install_java() {
     echo "Descargando Java..."

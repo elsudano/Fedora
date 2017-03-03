@@ -194,9 +194,15 @@ function issue_msg() {
     if [ -e $ISSUE_FILE ];then
         rm $ISSUE_FILE
     fi
-    local port=$(grep /usr/lib/systemd/system/cockpit.socket -e "ListenStream=" | awk -F"=" '{print $2}')
+    local port
+    if [ -e $PORT_COCKPIT_FILE ];then
+        $port=$(grep /etc/systemd/system/cockpit.socket.d/listen.conf -e "ListenStream=" | awk -F"=" 'FNR==2 {print $2}')
+    else
+        $port=$(grep /usr/lib/systemd/system/cockpit.socket -e "ListenStream=" | awk -F"=" '{print $2}')
+    fi
+    read -p "Indique el segundo titulo del Banner: " TITLE
     #echo -e "\S\r\nKernel $(uname -r) on an \m (\l)\r\n" >> $ISSUE_FILE
-    echo "     Veridata S.L.       $1" > $ISSUE_FILE
+    echo "     Veridata S.L.       $TITLE" > $ISSUE_FILE
     echo "----------------------------------------------" >> $ISSUE_FILE
     echo "Configurado por:        Carlos de la Torre" >> $ISSUE_FILE
     echo "Sistema:                \S \s \v" >> $ISSUE_FILE
@@ -209,8 +215,12 @@ function issue_msg() {
 
 # Función que cambia el puerto de administración de cockpit al que quiere el usuario
 function change_cockpit_port() {
-    read -p "Que puerto desea: " PORT
+    read -p "Que puerto desea: (set by default 0)" PORT
     # hacer una validación de con REGEX de que es un puerto valido
+    if [ $PORT == 0 ];then
+        rm $PORT_COCKPIT_FILE
+        exit
+    fi
     if [ -e $PORT_COCKPIT_FILE ];then
         rm $PORT_COCKPIT_FILE
     fi

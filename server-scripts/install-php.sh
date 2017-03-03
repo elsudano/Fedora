@@ -13,7 +13,8 @@ DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
 DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
 MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
 MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
-
+RPM_EPEL=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+RPM_WEBTATIC=https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
@@ -75,10 +76,10 @@ function check_depends() {
 
 # Función privada que se encarga de hacer las instalaciones previas para la instalación de la versión PHP que corresponda
 function pre_install_php(){
-    wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -O $TEMP_FILE
-    mv $TEMP_FILE epel-release-latest-7.noarch.rpm.rpm
-    dnf -y install epel-release-latest-7.noarch.rpm.rpm
-    wget https://mirror.webtatic.com/yum/el7/webtatic-release.rpm -O $TEMP_FILE
+    wget $RPM_EPEL -O $TEMP_FILE
+    mv $TEMP_FILE epel-release-latest-7.noarch.rpm
+    dnf -y install epel-release-latest-7.noarch.rpm
+    wget $RPM_WEBTATIC -O $TEMP_FILE
     mv $TEMP_FILE webtatic-release.rpm
     dnf -y install webtatic-release.rpm
     rm -f epel-release-latest-7.noarch.rpm

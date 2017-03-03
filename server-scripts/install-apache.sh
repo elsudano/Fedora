@@ -83,7 +83,7 @@ function create_data_root_path(){
         read -p "Desea utilizar el directorio $PATH_DATA_WEB como root web? (Y/N): " opt
         if [ $opt == "n" ] || [ $opt == "N" ];then
             read -e -p "Indique el directorio root web:" PATH_DATA_WEB
-            mkdir $PATH_DATA_WEB
+            mkdir -p $PATH_DATA_WEB
             echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
         fi
     else
@@ -92,13 +92,13 @@ function create_data_root_path(){
             PATH_DATA_WEB="/datawww/html"
         fi
         echo "dir: $PATH_DATA_WEB"
-        mkdir $PATH_DATA_WEB
+        mkdir -p $PATH_DATA_WEB
         echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
     fi
     # Con esto nos aseguramos que el directorio de datos esta en el mismo directorio que el root
     if [ ! -e $PATH_DATA_WEB/../datavcomm ];then
         echo "Se creará el directorio 'datavcomm' al mismo nivel que $PATH_DATA_WEB/../datavcomm para alojar datos del software"
-        mkdir $PATH_DATA_WEB/../datavcomm
+        mkdir -p $PATH_DATA_WEB/../datavcomm
     fi
 }
 

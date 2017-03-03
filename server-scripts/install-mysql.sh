@@ -152,7 +152,7 @@ function change_pass_root(){
     systemctl status mysqld.service
 }
 
-# Función que se encarga de intalar el servidor de MySQL de Oracle
+# Función que se encarga crear el usuario de administración de la base de datos
 function create_user_admin_db(){
     echo "Crearemos un usuario de administración para MySQL"
     read -p "Indique el usuario: (default:$ADMIN_USER_DB) " ADMIN_USER_DB
