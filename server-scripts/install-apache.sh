@@ -13,6 +13,8 @@ DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
 DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
 MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
 MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
+FALSE=1
+TRUE=0
 
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
@@ -22,7 +24,9 @@ PATH_DATA_VCOMM=/datawww/datavcomm
 APACHE_USER=gestapa
 APACHE_GROUP=datawww
 
-# FUNCIONES
+################################################################################
+############################## Funciones genéricas #############################
+################################################################################
 
 # Función para deter la ejecución con o sin mensaje
 # parámetro de entrada $1 == --with-msg para poner mensaje (opcional)
@@ -47,15 +51,54 @@ function is_root {
     fi
 }
 
+# Función para comprobar si una variable está seteada
+function is_set() {
+    local retval=$FALSE
+    if [[ -n "$1" ]]; then
+    retval=$TRUE
+    fi
+    return $retval
+}
+
 # Funcion de wrapper para find
 # parámetro de entrada $1 lo que queremos buscar
-function buscar(){
+function search(){
     if [ $1 != "" ]; then
         local retval=$(find / -name $1)
     else
         echo "Faltán parámetros para buscar"
     fi
     echo $retval
+}
+
+# Función para comprobar que existe un parámetro
+function hasparam() {
+    local retval=$FALSE
+    for i in $(seq 2 $#); do
+        if [ "${@:$i:1}" == "$1" ]; then
+            retval=$TRUE
+            break
+        fi
+    done
+    return $retval
+}
+
+# Muestra información relevante para el usuario
+function minfo() {
+    if hasparam --no-break "$@"; then
+        echo "[INFO] $1"
+    else
+        pause -m "[INFO] $1 [Pulse ENTER...]"
+    fi
+}
+
+# Muestra un error al usuario
+function merr() {
+    if hasparam --no-break "$@"; then
+        echo "[ERROR] $1"
+    else
+        pause -m "[ERROR] $1 [Pulse ENTER...]"
+    fi
 }
 
 # Función que se encarga de buscar las dependencias
@@ -75,6 +118,48 @@ function check_depends() {
             echo "Dependencia NO encontrada: $depend"
         fi
     done
+}
+
+# Función para seleccionar el usuario que se desea de los que pertenecen al sistema
+# @param string $1 => Nombre de la variable donde se almacenará el usuario seleccionado
+function sel_user() {
+
+    ! is_set $1 && merr "Falta el parámetro 1: nombre de la variable" && menu && exit
+
+    local vtmp_uuid=$2 && ! is_set $vtmp_uuid && vtmp_uuid="1000"
+    local vtmp_ouid=$3 && ! is_set $vtmp_ouid && vtmp_ouid=$vtmp_uuid
+
+    local vtmp_i=0
+    local vtmp_users
+    local vtmp_sel=""
+
+    minfo "Selección de usuario..." --no-break
+
+    local vtmp_filter=$(cat /etc/passwd | awk -vuuid=$vtmp_uuid -vouid=$vtmp_ouid  -F':' '$3>=uuid && $4>=ouid {print $1}')
+
+    # while must be in the main shell ! (Environment variables)
+    is_set $vtmp_filter && \
+    while read vtmp_user;
+    do
+        vtmp_users[$vtmp_i]=$vtmp_user
+        ((vtmp_i+=1))
+        echo " $vtmp_i ) $vtmp_user"
+    done <<< "$vtmp_filter" # here-string
+
+    if [ "$vtmp_i" == "0" ]
+    then
+    merr "No existen usuarios disponibles, cree un usuario y reinicie la ejecución" && menu && exit
+    fi
+
+    vtmp_sel=$(request -m "Introduzca el número de usuario")
+
+    while [ "$vtmp_sel" -lt "1" ] || [ "$vtmp_sel" -gt "$vtmp_i" ];
+    do
+        merr "Opción inválida..." --no-break
+        vtmp_sel=$(request -m "Introduzca el número de usuario")
+    done
+
+    eval $1="${vtmp_users[$((vtmp_sel-1))]}"
 }
 
 # Función que se encarga de crear los directorios para los datos y el directorio root web para apache
@@ -135,11 +220,17 @@ function create_user_and_group(){
     fi
 }
 
+################################################################################
+############################## Funciones de Script #############################
+################################################################################
+
 # Función que se encarga realizar la instalación mínima de Apache
 function install_apache(){
     echo "Comienza la instalación de Apache"
     dnf -y install httpd.x86_64
-    echo "sacar una lista de usuarios y grupos y permitir elegir al usuario"
+    local user
+    sel_user($user)
+
 }
 
 # Función que se encarga realizar la instalación de los módulos necesarios para V·COMM
