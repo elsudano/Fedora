@@ -8,3 +8,6 @@ tmp/
 
 # Crash Log
 crash.log
+
+# SSH upload
+.remote-sync.json
