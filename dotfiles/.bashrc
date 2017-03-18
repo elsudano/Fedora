@@ -194,8 +194,15 @@ _isroot=false
       alias halt='sudo halt'
     fi
   #}}}
-  # SSH
+  # SSH {{{
     alias conectar='ssh -i /home/usuario/.ssh/id_rsa'
+    
+  #}}}
+  # NETWORKING {{{
+    if ! $_isroot; then
+      alias netscan='sudo nmap -sn -PO '
+    fi
+  #}}}
   # MULTIMEDIA {{{
     if which get_flash_videos &>/dev/null; then
       alias gfv='get_flash_videos -r 720p --subtitles'
