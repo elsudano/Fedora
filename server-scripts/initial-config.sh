@@ -20,6 +20,7 @@ SELINUX_FILE=/etc/selinux/config
 TEMP_FILE=/tmp/file.tmp
 ISSUE_FILE=/etc/issue
 PORT_COCKPIT_FILE=/etc/systemd/system/cockpit.socket.d/listen.conf
+COCKPIT_DEFAULT_PORT=9090
 NEWUSER=usuario
 NEWGROUP=usuarios
 
@@ -107,20 +108,30 @@ function selinux() {
 
 # Funciónm para habilitar/deshabilitar el firewalld
 function firewall() {
-    systemctl status firewalld.service
-    read -p "Que desea hacer, ¿Habilitar ó Deshabilitar el firewall? H/D " opt
-    if [[ $opt == "h" ]] || [[ $opt == "H" ]];then
-        read -p "¿Quiere realizar los cambios de forma permanente (on boot)? Y/N " opt
-        if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
-            systemctl enable firewalld.service
-        fi
-        systemctl start firewalld.service
-    elif [[ $opt == "d" ]] || [[ $opt == "D" ]]; then
-        read -p "¿Quiere realizar los cambios de forma permanente (on boot)? Y/N " opt
+    local state=$(firewall-cmd --state)
+    if [[ $state == "running" ]];then
+      echo "Estado del FirewallD: $state"
+      read -p "¿Desea detener el firewall? S/N " opt
+      if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+        systemctl stop firewalld.service
+        read -p "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " opt
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
             systemctl disable firewalld.service
         fi
-        systemctl stop firewalld.service
+        echo "Estado del demonio del FirewallD: "
+        systemctl status firewalld.service
+      fi
+    else
+      read -p "¿Desea habilitar el firewall? S/N " opt
+      if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+        systemctl start firewalld.service
+        read -p "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " opt
+        if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+            systemctl enable firewalld.service
+        fi
+        echo "Estado del demonio del FirewallD: "
+        systemctl status firewalld.service
+      fi
     fi
 }
 
@@ -194,14 +205,14 @@ function issue_msg() {
     if [ -e $ISSUE_FILE ];then
         rm $ISSUE_FILE
     fi
+    read -p "Indique el segundo titulo del Banner: " TITLE
+    #echo -e "\S\r\nKernel $(uname -r) on an \m (\l)\r\n" >> $ISSUE_FILE
     local port
     if [ -e $PORT_COCKPIT_FILE ];then
         $port=$(grep /etc/systemd/system/cockpit.socket.d/listen.conf -e "ListenStream=" | awk -F"=" 'FNR==2 {print $2}')
     else
         $port=$(grep /usr/lib/systemd/system/cockpit.socket -e "ListenStream=" | awk -F"=" '{print $2}')
     fi
-    read -p "Indique el segundo titulo del Banner: " TITLE
-    #echo -e "\S\r\nKernel $(uname -r) on an \m (\l)\r\n" >> $ISSUE_FILE
     echo "     Veridata S.L.       $TITLE" > $ISSUE_FILE
     echo "----------------------------------------------" >> $ISSUE_FILE
     echo "Configurado por:        Carlos de la Torre" >> $ISSUE_FILE
@@ -215,26 +226,50 @@ function issue_msg() {
 
 # Función que cambia el puerto de administración de cockpit al que quiere el usuario
 function change_cockpit_port() {
-    read -p "Que puerto desea: (set by default 0)" PORT
+    read -p "Que puerto desea: (set by default $COCKPIT_DEFAULT_PORT)" PORT
+    if [ -z $PORT ];then
+        PORT=$COCKPIT_DEFAULT_PORT
+    fi
     # hacer una validación de con REGEX de que es un puerto valido
-    if [ $PORT == 0 ];then
-        rm $PORT_COCKPIT_FILE
-        exit
+    if [ $PORT == 9090 ];then
+      if [ -e $PORT_COCKPIT_FILE ];then
+          rm $PORT_COCKPIT_FILE
+      fi
+      systemctl daemon-reload
+      systemctl restart cockpit.socket
+      netstat -ltn
+    else
+      # esto lo tienes que poner para que se reconozca de manera automatica
+      if [ ! -d /etc/systemd/system/cockpit.socket.d ];then
+          mkdir /etc/systemd/system/cockpit.socket.d
+      fi
+      echo -e "[Socket]\r\nListenStream=\r\nListenStream=$PORT" > $PORT_COCKPIT_FILE
+      echo "Se ha cambiado el puerto de cockpit a: $PORT"
+      systemctl daemon-reload
+      systemctl restart cockpit.socket
+      echo "Se ha reiniciado el socket de cockpit"
+      systemctl status cockpit.socket
+      netstat -ltn
     fi
-    if [ -e $PORT_COCKPIT_FILE ];then
-        rm $PORT_COCKPIT_FILE
+}
+
+# Funcion que se encarga de cambiar el nombre del equipo
+function change_hostname() {
+  while [[ -z $hostname ]]; do
+    read -p "¿Que nombre de host desea usar? " hostname
+    if [ -z $hostname ];then
+      echo "Por favor indique un nombre de host valido"
     fi
-    # esto lo tienes que poner para que se reconozca de manera automatica
-    if [ ! -d /etc/systemd/system/cockpit.socket.d ];then
-        mkdir /etc/systemd/system/cockpit.socket.d
-    fi
-    echo -e "[Socket]\r\nListenStream=\r\nListenStream=$PORT" > $PORT_COCKPIT_FILE
-    echo "Se ha cambiado el puerto de cockpit a: $PORT"
-    systemctl daemon-reload
-    systemctl restart cockpit.socket
-    echo "Se ha reiniciado el socket de cockpit"
-    systemctl status cockpit.socket
-    netstat -ltn
+  done
+  read -p "¿Pertenece a un dominio? Y/N " opt
+  if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+    while [[ -z $domain ]]; do
+      read -p "¿Que nombre de dominio desea usar? " hostname
+      if [ -z $domain ];then
+        echo "Por favor indique un nombre de dominio valido"
+      fi
+    done
+  fi
 }
 
 # Función para instalar el administrador de consola de NetworkManager
@@ -256,7 +291,7 @@ function install_teamviewer() {
 }
 
 # Función para instalar el servidor de VNC
-function install_tigerVNC() {
+function install_VNC() {
     echo "# Función para instalar el servidor de VNC"
 }
 
@@ -279,6 +314,7 @@ function menu() {
     echo "           * 10.- Comprobar dependencias          *"
     echo "           * 11.- Cambiar puerto de Cockpit       *"
     echo "           * 12.- Crear mensage de ISSUE          *"
+    echo "           * 13.- Cambiar el nombre a la maquina  *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -328,7 +364,7 @@ function menu() {
         menu;
         ;;
         9)
-
+        install_VNC;
         pause;
         menu;
         ;;
@@ -343,7 +379,12 @@ function menu() {
         menu;
         ;;
         12)
-        issue_msg "V·COMM Madrid";
+        issue_msg;
+        pause;
+        menu;
+        ;;
+        13)
+        change_hostname;
         pause;
         menu;
         ;;
