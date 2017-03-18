@@ -17,6 +17,7 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 # VARIABLES GLOBALES
 TEST_IP=62.15.168.50
 DNF_CONF_FILE=/etc/dnf/dnf.conf
+NTP_CONFIG_FILE=/etc/ntp.conf
 TEMP_FILE=/tmp/file.tmp
 
 # FUNCIONES
@@ -80,20 +81,47 @@ function config_dnf(){
     echo "exclude=kernel* mariadb* postgresql* apache* httpd* mod_ssl* mysql* php* java*" >> $DNF_CONF_FILE
 }
 
+#Función que se encarga de instalar el monitor de sistema htop
+function install_htop(){
+    echo "Instalación de monitor htop"
+    dnf -y install htop.x86_64
+}
+
+#Función que se encarga de instalar y configura el demonio para la sincronización de la hora
+function config_ntpd(){
+    echo "Instalación de NTPd"
+    dnf -y install ntp.x86_64
+    dnf -y install ntpdate.x86_64
+    echo "Abriendo firewalld para NTPd"
+    firewall-cmd --add-service=ntp --permanent
+    firewall-cmd --reload
+    echo "Activando Demonio"
+    systemctl enable ntpd
+    systemctl start ntpd
+    if [ -e $NTP_CONFIG_FILE ];then
+        cp --backup=numbered $NTP_CONFIG_FILE $NTP_CONFIG_FILE.bak
+    fi
+    echo "Configurando servidores..."
+    echo "server hora.roa.es iburst" >> $NTP_CONFIG_FILE
+    echo "Comprobando el servicio"
+    ntpq -p
+}
+
 # Función para presentar el Menú
 # Sin parámetros de entrada
 function menu() {
     clear;
     echo
     echo "           ****************************************"
-    echo "           *          Esto es el Menú             *"
-    echo "           * 1.- Configurar DNF                   *"
-    echo "           * 2.-                                  *"
+    echo "           *          Select one option           *"
+    echo "           * 1.- Config DNF                       *"
+    echo "           * 2.- Install htop                     *"
+    echo "           * 3.- Install and Config NTPd          *"
     echo "           *                                      *"
-    echo "           * 0.- Salir                            *"
+    echo "           * 0.- Exit                            *"
     echo "           ****************************************"
     echo
-    read -p "           Elija una opción: " option
+    read -p "           Select one option: " option
     case $option in
         0)
         exit;
@@ -104,12 +132,17 @@ function menu() {
         menu;
         ;;
         2)
-        selinux;
+        install_htop;
+        pause;
+        menu;
+        ;;
+        3)
+        config_ntpd;
         pause;
         menu;
         ;;
         *)
-        echo "Opción no permitida";
+        echo "This option is not allowed";
         pause;
         menu;
         ;;
