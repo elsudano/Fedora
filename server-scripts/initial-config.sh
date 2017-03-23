@@ -8,13 +8,10 @@
 # Uso: initial-config.sh
 
 
-# VARIABLES ESTATICAS
-DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
-DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
-MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
-MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
+# VARIABLES ESTATICAS DEL SCRIPT
+DEPENDS_THIS_SCRIPT=(ifconfig nmap find git) # Dependencias necesarias
 
-# VARIABLES GLOBALES
+# VARIABLES GLOBALES DEL SCRIPT
 TEST_IP=62.15.168.50
 SELINUX_FILE=/etc/selinux/config
 TEMP_FILE=/tmp/file.tmp
@@ -24,83 +21,29 @@ COCKPIT_DEFAULT_PORT=9090
 NEWUSER=usuario
 NEWGROUP=usuarios
 
-# FUNCIONES
-
-# Función para deter la ejecución con o sin mensaje
-# parámetro de entrada $1 == --with-msg para poner mensaje (opcional)
-# #parámetro de entrada $2 == cadena de texto con el mensaje (opcional)
-function pause() {
-    if [[ $1 == "--with-msg" ]] && [[ $2 != "" ]]; then
-        read -p "$2";
-    elif [[ $1 == "--with-msg" ]]; then
-        read -p "Presione Enter para continuar o Ctrl+C para cancelar.";
-    else
-        read -s -t 5
-    fi
-}
-
-# Función para saber si se esta utilizando root
-function is_root {
-    if [[ "$(whoami)" != "root" ]]; then
-        echo
-        echo "  Tiene que ejecutar este script con permisos de administrador";
-        echo
-        exit;
-    fi
-}
-
-# Función que se encarga de crear cualquier usuario en el sistema, de manera básica hay parametros que se omiten en la creación del mismo investigar sobre el tema
-function create_user() {
-    echo "Crearemos un usuario del sistema"
-    read -p "Indique el usuario: (default:$NEWUSER) " NEWUSER
-    if [ -z $NEWUSER ];then
-        echo "el usuario es vacío"
-        NEWUSER=usuario
-    fi
-    read -p "Cuál es el nombre del usuario completo: " complete_name_user
-    read -p "Indique el grupo al que pertenece: (default:$NEWGROUP) " NEWGROUP
-    if [ -z $NEWGROUP ];then
-        echo "el grupo es vacío"
-        NEWGROUP=usuarios
-    fi
-    echo "El directorio home del usuario es: /home/$NEWUSER"
-    read -p "¿Es correcto? (Y/N): " opt
-    if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
-        read -e -p "Indique la ruta completa del directorio HOME: " PATH_HOME
-    fi
-    echo "Estos los datos del usuario: "
-    echo -e "Usuario:\t\t$NEWUSER"
-    echo -e "Nombre:\t\t$complete_name_user"
-    echo -e "Grupo principal:\t$NEWGROUP"
-    echo -e "Carpeta Home:\t$PATH_HOME"
-    if [[ $opt == "y" ]] || [[ $opt == "Y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
-        #groupadd -f $NEWGROUP
-        #useradd -M -d $PATH_HOME -c "$complete_name_user" -g $NEWGROUP $NEWUSER
-        echo "Por favor introduzca la contraseña: "
-        #passwd $NEWUSER
-    fi
-}
+# INCLUDES
+path="$(dirname "$0")"
+source "$path/functions-depends.sh"
 
 # Funciónm para habilitar/deshabilitar el SELinux
 function selinux() {
     /usr/sbin/sestatus
-    echo
     if [[ "$(/usr/sbin/getenforce)" == "Disabled" ]]; then
-        read -p "¿Desea Activarlo? Y/N " opt
+        opt=$(request -m "¿Desea Activarlo? Y/N " -v N)
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
             sed -i 's/SELINUX=disabled/SELINUX=enforcing/g' $SELINUX_FILE
             echo "SELinux habilitado..."
-            read -s -t 3
+            pause
         fi
     else
-        read -p "¿Desea Desactivarlo? Y/N " opt
+        opt=$(request -m "¿Desea Desactivarlo? Y/N " -v N)
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
             sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' $SELINUX_FILE
             echo "SELinux deshabilitado..."
-            read -s -t 3
+            pause
         fi
     fi
-    read -p "Es necesario reiniciar el servidor, ¿Desea hacerlo ahora? Y/N " opt
+    opt=$(request -m "Es necesario reiniciar el servidor, ¿Desea hacerlo ahora? Y/N " -v N)
     if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         reboot
     fi
@@ -111,10 +54,10 @@ function firewall() {
     local state=$(firewall-cmd --state)
     if [[ $state == "running" ]];then
       echo "Estado del FirewallD: $state"
-      read -p "¿Desea detener el firewall? S/N " opt
+      opt=$(request -m "¿Desea detener el firewall? S/N " -v N)
       if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         systemctl stop firewalld.service
-        read -p "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " opt
+        opt=$(request -m "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " -v N)
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
             systemctl disable firewalld.service
         fi
@@ -122,10 +65,10 @@ function firewall() {
         systemctl status firewalld.service
       fi
     else
-      read -p "¿Desea habilitar el firewall? S/N " opt
+      opt=$(request -m "¿Desea habilitar el firewall? S/N " -v N)
       if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         systemctl start firewalld.service
-        read -p "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " opt
+        opt=$(request -m "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " -v N)
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
             systemctl enable firewalld.service
         fi
@@ -166,36 +109,6 @@ function internet_check() {
     else
         echo "No hay conectividad exterior"
     fi
-}
-
-# Funcion de wrapper para find
-# parámetro de entrada $1 lo que queremos buscar
-function buscar(){
-    if [ $1 != "" ]; then
-        local retval=$(find / -name $1)
-    else
-        echo "Faltán parámetros para buscar"
-    fi
-    echo $retval
-}
-
-# Función que se encarga de buscar las dependencias
-function check_depends() {
-    for depend in ${DEPENDS[@]}
-    do
-        hit=0
-        for dir in ${DIRS[@]}
-        do
-            if [ -x "$dir/$depend" ]; then
-                echo "Dependencia encontrada: $depend"
-                hit=1
-                break;
-            fi
-        done
-        if [ $hit == 0 ]; then
-            echo "Dependencia NO encontrada: $depend"
-        fi
-    done
 }
 
 # Función para crear el mensaje de ISSUE
@@ -256,7 +169,7 @@ function change_cockpit_port() {
 # Funcion que se encarga de cambiar el nombre del equipo
 function change_hostname() {
   while [[ -z $hostname ]]; do
-    read -p "¿Que nombre de host desea usar? " hostname
+    hostname=$(request -m "Introduzca el nombre de Host")
     if [ -z $hostname ];then
       echo "Por favor indique un nombre de host valido"
     fi
@@ -264,11 +177,17 @@ function change_hostname() {
   read -p "¿Pertenece a un dominio? Y/N " opt
   if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
     while [[ -z $domain ]]; do
-      read -p "¿Que nombre de dominio desea usar? " hostname
+      domain=$(request -m "¿Que nombre de dominio desea usar? " -v "veridata.local")
       if [ -z $domain ];then
         echo "Por favor indique un nombre de dominio valido"
       fi
     done
+  fi
+  if [[ -n $hostname ]] && [[ -n $domain ]];then
+    hostnamectl set-hostname "$hostname.$domain"
+  fi
+  if [[ -n $hostname ]] && [[ -z $domain ]];then
+    hostnamectl set-hostname $hostname
   fi
 }
 
@@ -319,7 +238,7 @@ function menu() {
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
     echo
-    read -p "           Elija una opción: " option
+    option=$(request -m "           Elija una opción: " -v 0)
     case $option in
         0)
         exit;
@@ -340,7 +259,7 @@ function menu() {
         menu;
         ;;
         4)
-        pause --with-msg;
+        pause -m;
         menu;
         ;;
         5)

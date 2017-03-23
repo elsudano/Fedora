@@ -8,71 +8,18 @@
 # Uso: install-php.sh
 
 
-# VARIABLES ESTATICAS
-DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
-DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
-MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
-MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
+# VARIABLES ESTATICAS DEL SCRIPT
+# poner todo esto como en los demas DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
 RPM_EPEL=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 RPM_WEBTATIC=https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-# VARIABLES GLOBALES
+
+# VARIABLES GLOBALES DEL SCRIPT
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
 
-# FUNCIONES
-
-# Función para deter la ejecución con o sin mensaje
-# parámetro de entrada $1 == --with-msg para poner mensaje (opcional)
-# #parámetro de entrada $2 == cadena de texto con el mensaje (opcional)
-function pause() {
-    if [[ $1 == "--with-msg" ]] && [[ $2 != "" ]]; then
-        read -p "$2";
-    elif [[ $1 == "--with-msg" ]]; then
-        read -p "Presione Enter para continuar o Ctrl+C para cancelar.";
-    else
-        read -s -t 5
-    fi
-}
-
-# Función para saber si se esta utilizando root
-function is_root {
-    if [[ "$(whoami)" != "root" ]]; then
-        echo
-        echo "  Tiene que ejecutar este script con permisos de administrador";
-        echo
-        exit;
-    fi
-}
-
-# Funcion de wrapper para find
-# parámetro de entrada $1 lo que queremos buscar
-function buscar(){
-    if [ $1 != "" ]; then
-        local retval=$(find / -name $1)
-    else
-        echo "Faltán parámetros para buscar"
-    fi
-    echo $retval
-}
-
-# Función que se encarga de buscar las dependencias
-function check_depends() {
-    for depend in ${DEPENDS[@]}
-    do
-        hit=0
-        for dir in ${DIRS[@]}
-        do
-            if [ -x "$dir/$depend" ]; then
-                echo "Dependencia encontrada: $depend"
-                hit=1
-                break;
-            fi
-        done
-        if [ $hit == 0 ]; then
-            echo "Dependencia NO encontrada: $depend"
-        fi
-    done
-}
+# INCLUDES
+path="$(dirname "$0")"
+source "$path/functions-depends.sh"
 
 # Función privada que se encarga de hacer las instalaciones previas para la instalación de la versión PHP que corresponda
 function pre_install_php(){
@@ -145,8 +92,8 @@ function install_modules_php70() {
 
 # Función que se encarga de modificar las variables concretas de PHP.ini para que funcione la aplicación
 function config_phpini(){
-    read -p "¿Que tamaño maximo de fichero es el que se podrá subir al servidor?: (sin unidades) " upload
-    if [ -z $upload ];then
+    upload=$(request -m "¿Que tamaño maximo de fichero es el que se podrá subir al servidor? (ej: 2M sin unidades) ")
+    if ! is_set $upload;then
         echo "Operación cancelada"
     else
         upload+="M"
@@ -154,8 +101,8 @@ function config_phpini(){
         #http://php.net/upload-max-filesize
         sed -i "s/upload_max_filesize = .*$/upload_max_filesize = $upload/g" /etc/php.ini
     fi
-    read -p "¿Que tamaño maximo de fichero es el que podrá enviar por el metodo post?: (sin unidades) " post
-    if [ -z $post ];then
+    post=$(request -m "¿Que tamaño maximo de fichero es el que podrá enviar por el metodo post?: (ej: 8M sin unidades) ")
+    if ! is_set $post;then
         echo "Operación cancelada"
     else
         post+="M"
@@ -165,8 +112,8 @@ function config_phpini(){
         #http://php.net/post-max-size
         sed -i "s/post_max_size = .*$/post_max_size = $post/g" /etc/php.ini
     fi
-    read -p "¿Cuál será el tamaño maximo de la ocupación de memoría?: (sin unidades) " memory
-    if [ -z $memory ];then
+    memory=$(request -m "¿Cuál será el tamaño maximo de la ocupación de memoría?: (ej: 128M sin unidades) ")
+    if ! is_set $memory;then
         echo "Operación cancelada"
     else
         memory+="M"
@@ -174,8 +121,8 @@ function config_phpini(){
         #http://php.net/memory-limit
         sed -i "s/memory_limit = .*$/memory_limit = $memory/g" /etc/php.ini
     fi
-    read -e -p "¿Cuál es la ruta absoluta donde se almacenarán los ficheros de session?: " session_file
-    if [ -z $session_file ];then
+    session_file=$(request -m "¿Cuál es la ruta relativa para las cookies? (ej: /)")
+    if ! is_set $session_file;then
         echo "Operación cancelada"
     else
         #The path for which the cookie is valid.
@@ -183,31 +130,39 @@ function config_phpini(){
         session_file=$(echo "$session_file" | sed 's/\//\\\//g')
         sed -i "s/session\.cookie_path = .*$/session\.cookie_path = $session_file/g" /etc/php.ini
     fi
+    session_path=$(request -m "¿Cuál es la ruta absoluta donde se almacenarán los ficheros de session? (ej: /tmp)")
+    if ! is_set $session_path;then
+        echo "Operación cancelada"
+    else
+        #http://php.net/session.save-path
+        session_path=$(echo "$session_path" | sed 's/\//\\\//g')
+        sed -i "s/session\.save_path = .*$/session\.save_path = $session_path/g" /etc/php.ini
+    fi
     echo "Los valores asignados a las variables son los siguientes: "
     cat /etc/php.ini | grep "upload_max_filesize = "
     cat /etc/php.ini | grep "post_max_size = "
     cat /etc/php.ini | grep "memory_limit = "
     cat /etc/php.ini | grep "session.cookie_path = "
+    cat /etc/php.ini | grep "session.save_path = "
+    pause -m
 }
 
 # Función que se encarga realizar la instalación mínima de PHP ver. 7.0
 function create_phpinfo(){
     echo "Crearemos el fichero de test.php y mostraremos que es lo que contiene"
-    read -p "¿Cuál es el usuario que se encarga de gestionar el servidor web? " user
-    if [ -z $user ];then
+    echo "¿Cuál es el usuario que se encarga de gestionar el servidor web? "
+    sel_user user
+    if ! is_set $user;then
         echo "El usuario no puede ser vacio"
-        clear;
-        create_phpinfo;
     else
         homedir=$( getent passwd "$user" | cut -d: -f6)
-        echo -e "<?php\r\nphpinfo();" > $homedir/test.php
+        echo -e "<?php\r\nphpinfo();\r\n?>\r\nSi solo vez este texto es que te falta instalar PHP" > $homedir/test.php
         echo
         echo -e "Resultado:\r\n"
         curl http://localhost/test.php;
     fi
     echo
-    pause --with-msg "Pulse ENTER para continuar";
-    clear;
+    pause -m "Pulse ENTER para continuar";
     read -p "Desea eliminar el fichero de prueba: $homedir/test.php (S/N) " opt
     if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         rm -f $homedir/test.php
@@ -216,8 +171,9 @@ function create_phpinfo(){
 
 # Función que se encarga de borrar el fichero de test.php
 function delete_phpinfo(){
-    read -p "¿Cuál es el usuario que se encarga de gestionar el servidor web? " user
-    if [ -n $user ];then
+    echo "¿Cuál es el usuario que se encarga de gestionar el servidor web? "
+    sel_user user
+    if is_set $user;then
         homedir=$( getent passwd "$user" | cut -d: -f6)
         read -p "Desea eliminar el fichero de prueba: $homedir/test.php (S/N) " opt
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then

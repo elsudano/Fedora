@@ -7,16 +7,14 @@
 # Opciones: Ninguna
 # Uso: install-apache.sh
 
+# INCLUDES
+path="$(dirname "$0")"
+source "$path/functions-depends.sh"
 
-# VARIABLES ESTATICAS
-DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
-DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
-MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
-MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
-FALSE=1
-TRUE=0
+# VARIABLES ESTATICAS DEL SCRIPT
+DEPENDS_THIS_SCRIPT=(ifconfig nmap find git) # Dependencias necesarias
 
-# VARIABLES GLOBALES
+# VARIABLES GLOBALES DEL SCRIPT
 TEST_IP=62.15.168.50
 TEMP_FILE=/tmp/file.tmp
 PATH_DATA_WEB=/datawww/html
@@ -24,194 +22,62 @@ PATH_DATA_VCOMM=/datawww/datavcomm
 APACHE_USER=gestapa
 APACHE_GROUP=datawww
 
-################################################################################
-############################## Funciones genéricas #############################
-################################################################################
-
-# Función para deter la ejecución con o sin mensaje
-# parámetro de entrada $1 == --with-msg para poner mensaje (opcional)
-# #parámetro de entrada $2 == cadena de texto con el mensaje (opcional)
-function pause() {
-    if [[ $1 == "--with-msg" ]] && [[ $2 != "" ]]; then
-        read -p "$2";
-    elif [[ $1 == "--with-msg" ]]; then
-        read -p "Presione Enter para continuar o Ctrl+C para cancelar.";
-    else
-        read -s -t 5
-    fi
-}
-
-# Función para saber si se esta utilizando root
-function is_root {
-    if [[ "$(whoami)" != "root" ]]; then
-        echo
-        echo "  Tiene que ejecutar este script con permisos de administrador";
-        echo
-        exit;
-    fi
-}
-
-# Función para comprobar si una variable está seteada
-function is_set() {
-    local retval=$FALSE
-    if [[ -n "$1" ]]; then
-    retval=$TRUE
-    fi
-    return $retval
-}
-
-# Funcion de wrapper para find
-# parámetro de entrada $1 lo que queremos buscar
-function search(){
-    if [ $1 != "" ]; then
-        local retval=$(find / -name $1)
-    else
-        echo "Faltán parámetros para buscar"
-    fi
-    echo $retval
-}
-
-# Función para comprobar que existe un parámetro
-function hasparam() {
-    local retval=$FALSE
-    for i in $(seq 2 $#); do
-        if [ "${@:$i:1}" == "$1" ]; then
-            retval=$TRUE
-            break
-        fi
-    done
-    return $retval
-}
-
-# Muestra información relevante para el usuario
-function minfo() {
-    if hasparam --no-break "$@"; then
-        echo "[INFO] $1"
-    else
-        pause -m "[INFO] $1 [Pulse ENTER...]"
-    fi
-}
-
-# Muestra un error al usuario
-function merr() {
-    if hasparam --no-break "$@"; then
-        echo "[ERROR] $1"
-    else
-        pause -m "[ERROR] $1 [Pulse ENTER...]"
-    fi
-}
-
-# Función que se encarga de buscar las dependencias
-function check_depends() {
-    for depend in ${DEPENDS[@]}
-    do
-        hit=0
-        for dir in ${DIRS[@]}
-        do
-            if [ -x "$dir/$depend" ]; then
-                echo "Dependencia encontrada: $depend"
-                hit=1
-                break;
-            fi
-        done
-        if [ $hit == 0 ]; then
-            echo "Dependencia NO encontrada: $depend"
-        fi
-    done
-}
-
-# Función para seleccionar el usuario que se desea de los que pertenecen al sistema
-# @param string $1 => Nombre de la variable donde se almacenará el usuario seleccionado
-function sel_user() {
-
-    ! is_set $1 && merr "Falta el parámetro 1: nombre de la variable" && menu && exit
-
-    local vtmp_uuid=$2 && ! is_set $vtmp_uuid && vtmp_uuid="1000"
-    local vtmp_ouid=$3 && ! is_set $vtmp_ouid && vtmp_ouid=$vtmp_uuid
-
-    local vtmp_i=0
-    local vtmp_users
-    local vtmp_sel=""
-
-    minfo "Selección de usuario..." --no-break
-
-    local vtmp_filter=$(cat /etc/passwd | awk -vuuid=$vtmp_uuid -vouid=$vtmp_ouid  -F':' '$3>=uuid && $4>=ouid {print $1}')
-
-    # while must be in the main shell ! (Environment variables)
-    is_set $vtmp_filter && \
-    while read vtmp_user;
-    do
-        vtmp_users[$vtmp_i]=$vtmp_user
-        ((vtmp_i+=1))
-        echo " $vtmp_i ) $vtmp_user"
-    done <<< "$vtmp_filter" # here-string
-
-    if [ "$vtmp_i" == "0" ]
-    then
-    merr "No existen usuarios disponibles, cree un usuario y reinicie la ejecución" && menu && exit
-    fi
-
-    vtmp_sel=$(request -m "Introduzca el número de usuario")
-
-    while [ "$vtmp_sel" -lt "1" ] || [ "$vtmp_sel" -gt "$vtmp_i" ];
-    do
-        merr "Opción inválida..." --no-break
-        vtmp_sel=$(request -m "Introduzca el número de usuario")
-    done
-
-    eval $1="${vtmp_users[$((vtmp_sel-1))]}"
-}
-
 # Función que se encarga de crear los directorios para los datos y el directorio root web para apache
 function create_data_root_path(){
-    if [ -e $PATH_DATA_WEB ] && [ -d $PATH_DATA_WEB ];then
-        read -p "Desea utilizar el directorio $PATH_DATA_WEB como root web? (Y/N): " opt
+  if [ -e $PATH_DATA_WEB ] && [ -d $PATH_DATA_WEB ];then
+    local opt=$(request -m "Desea utilizar el directorio $PATH_DATA_WEB como root web? (Y/N) ")
+    if [ $opt == "n" ] || [ $opt == "N" ];then
+      while [ -z $PATH_DATA_WEB ]
+      do
+        PATH_DATA_WEB=$(request -m "Indique el directorio root web ")
         if [ $opt == "n" ] || [ $opt == "N" ];then
-            read -e -p "Indique el directorio root web:" PATH_DATA_WEB
-            mkdir -p $PATH_DATA_WEB
-            echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
+          merr "Opción inválida..." --no-break
         fi
-    else
-        read -e -p "Indique el directorio root web: (default:$PATH_DATA_WEB) " PATH_DATA_WEB
-        if [ -n $PATH_DATA_WEB ];then
-            PATH_DATA_WEB="/datawww/html"
-        fi
-        echo "dir: $PATH_DATA_WEB"
-        mkdir -p $PATH_DATA_WEB
-        echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
+      done
+      mkdir -p $PATH_DATA_WEB
+      echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
     fi
-    # Con esto nos aseguramos que el directorio de datos esta en el mismo directorio que el root
-    if [ ! -e $PATH_DATA_WEB/../datavcomm ];then
-        echo "Se creará el directorio 'datavcomm' al mismo nivel que $PATH_DATA_WEB/../datavcomm para alojar datos del software"
-        mkdir -p $PATH_DATA_WEB/../datavcomm
-    fi
+  else
+    PATH_DATA_WEB=$(request -m "Indique el directorio root web " -v /datawww/html)
+    mkdir -p $PATH_DATA_WEB
+    echo "Se ha creado el directorio $PATH_DATA_WEB para alojar la instalación WEB"
+  fi
+  # Con esto nos aseguramos que el directorio de datos esta en el mismo directorio que el root
+  if [ ! -e $PATH_DATA_WEB/../datavcomm ];then
+    echo "Se creará el directorio 'datavcomm' al mismo nivel que $PATH_DATA_WEB/../datavcomm para alojar datos del software"
+    mkdir -p $PATH_DATA_WEB/../datavcomm
+  fi
 }
 
 # Función que se encarga de crear los usuarios y los grupos para el correcto funcionamiento
 function create_user_and_group(){
     echo "Crearemos un usuario para apache"
-    read -p "Indique el usuario: (default:$APACHE_USER) " APACHE_USER
     if [ -z $APACHE_USER ];then
-        APACHE_USER=gestapa
+        APACHE_USER=$(request -m "Indique el usuario " -v gestapa)
     fi
-    read -p "Cuál es el nombre del usuario completo: " complete_name_user
-    read -p "Indique el grupo al que pertenece: (default:$APACHE_GROUP) " APACHE_GROUP
+
+    local complete_name_user=$(request -m "Nombre completo del Usuario")
+
     if [ -z $APACHE_GROUP ];then
-        APACHE_GROUP=datawww
+        APACHE_GROUP=$(request -m "Indique el usuario " -v datawww)
     fi
     echo "El directorio donde se alojan las webs es: $PATH_DATA_WEB"
-    read -p "¿Es correcto? (Y/N): " opt
+    opt=$(request -m "¿Es correcto? (Y/N) ")
+
     if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
-        read -p "Indique la ruta donde se almacenarán las webs: " PATH_DATA_WEB
+        PATH_DATA_WEB=$(request -m "Nombre completo del Usuario")
     fi
+
     groupadd -f $APACHE_GROUP
     useradd -M -d $PATH_DATA_WEB -c "$complete_name_user" -g $APACHE_GROUP $APACHE_USER
-    if [ -e $PATH_DATA_WEB/../datavcomm ];then
+
+    if [ -e $PATH_DATA_WEB ];then
         chown -R $APACHE_USER:$APACHE_GROUP $PATH_DATA_WEB
         chmod 0775 $PATH_DATA_WEB
     else
         echo "Falta el directorio root web, para poder asignarle permisos"
     fi
+
     if [ -e $PATH_DATA_WEB/../datavcomm ];then
         chown -R $APACHE_USER:$APACHE_GROUP $PATH_DATA_WEB/../datavcomm
         chmod 0775 $PATH_DATA_WEB/../datavcomm
@@ -226,11 +92,12 @@ function create_user_and_group(){
 
 # Función que se encarga realizar la instalación mínima de Apache
 function install_apache(){
-    echo "Comienza la instalación de Apache"
-    dnf -y install httpd.x86_64
-    local user
-    sel_user($user)
-
+  echo "Comienza la instalación de Apache"
+  dnf -y install httpd.x86_64
+  local user
+  sel_user user
+  # a partir de aqui tenemos que seleccionar el fichero de configuracion de
+  # apache para asignarle el usuario de gestion
 }
 
 # Función que se encarga realizar la instalación de los módulos necesarios para V·COMM
@@ -242,7 +109,31 @@ function install_apache_modules(){
 # Función que modifica los ficheros de configuración necesarios para la configuración basica de apache
 function basic_configuration_apache(){
     echo "Buscar los ficheros de configuracion de apache y modificar solo las partes necesarias para que funcione"
-}
+    # analizar el fichero de configuracion que viene por defecto y comprobar que
+    # todas las lineas que quiero estan en el por cada linea que se analize
+    # tienes que mostrar un mensaje con el posible error
+    #
+    # Cambiar 'Listen 80' por 'Listen *:80 http'
+    # Cambiar 'User apache' por 'User gestapa'
+    # Cambiar 'Group apache' por 'Group datawww'
+    # Cambiar 'ServerAdmin root@localhost' por 'ServerAdmin carlos.delatorre@veridata.es'
+    # Cambiar 'DocumentRoot "/var/www/html"' por 'DocumentRoot "/datawww/html"'
+    # Cambiar '<Directory "/var/www/html">' por '<Directory "/datawww/html">'
+    # Cambiar '' por ''
+    # Cambiar '' por ''
+    # Cambiar '' por ''
+    # Cambiar '' por ''
+    # Eliminar todo lo siguiente
+    #
+        # Relax access to content within /var/www.
+        #
+        # <Directory "/var/www">
+        #     AllowOverride None
+        #     # Allow open access:
+        #     Require all granted
+        # </Directory>
+    #
+  }
 
 # Función que se encarga de montar los virtual host necesarios
 function create_virtual_host(){
@@ -293,7 +184,7 @@ function menu() {
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
     echo
-    read -p "           Elija una opción: " option
+    option=$(request -m "Elija una opción: " -v 0)
     case $option in
         0)
         exit;
