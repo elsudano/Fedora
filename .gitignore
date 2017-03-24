@@ -11,3 +11,8 @@ crash.log
 
 # SSH upload
 .remote-sync.json
+sftp-config.json
+
+# Sublime Project
+Fedora.sublime-project
+Fedora.sublime-workspace
