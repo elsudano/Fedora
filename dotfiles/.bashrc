@@ -57,6 +57,7 @@ _isroot=false
       export PS1="$GY[$Y\u$GY@$P\h$GY:$B\W$GY]$W\$(get_prompt_symbol) "
     fi
   else
+    export PS1="$GY[$Y\u$GY@$P\h$GY:$B\W$GY]$W"
     export TERM='xterm-color'
   fi
 #}}}
