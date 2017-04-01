@@ -52,13 +52,13 @@ function create_data_root_path(){
 # Función que se encarga de crear los usuarios y los grupos para el correcto funcionamiento
 function create_user_and_group(){
     echo "Crearemos un usuario para apache"
-    if [ -z $APACHE_USER ];then
+    if is_set $APACHE_USER;then
         APACHE_USER=$(request -m "Indique el usuario " -v gestapa)
     fi
 
     local complete_name_user=$(request -m "Nombre completo del Usuario")
 
-    if [ -z $APACHE_GROUP ];then
+    if is_set $APACHE_GROUP;then
         APACHE_GROUP=$(request -m "Indique el usuario " -v datawww)
     fi
     echo "El directorio donde se alojan las webs es: $PATH_DATA_WEB"
@@ -70,6 +70,7 @@ function create_user_and_group(){
 
     groupadd -f $APACHE_GROUP
     useradd -M -d $PATH_DATA_WEB -c "$complete_name_user" -g $APACHE_GROUP $APACHE_USER
+    passwd $APACHE_USER
 
     if [ -e $PATH_DATA_WEB ];then
         chown -R $APACHE_USER:$APACHE_GROUP $PATH_DATA_WEB
