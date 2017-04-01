@@ -175,19 +175,19 @@ function merr() {
 # mismo investigar sobre el tema
 function create_user() {
     echo "Crearemos un usuario del sistema"
-    read -p "Indique el usuario: (default:$NEWUSER) " NEWUSER
-    if [ -z $NEWUSER ];then
+    NEWUSER=$(request -m "Indique el usuario " -v usuario)
+    if ! is_set $NEWUSER; then
         echo "el usuario es vacío"
         NEWUSER=usuario
     fi
-    read -p "Cuál es el nombre del usuario completo: " complete_name_user
-    read -p "Indique el grupo al que pertenece: (default:$NEWGROUP) " NEWGROUP
-    if [ -z $NEWGROUP ];then
+    complete_name_user=$(request -m "Cuál es el nombre del usuario completo " -v Usuario)
+    NEWGROUP=$(request -m "Indique el grupo al que pertenece " -v users)
+    if ! is_set $NEWGROUP; then
         echo "el grupo es vacío"
         NEWGROUP=usuarios
     fi
     echo "El directorio home del usuario es: /home/$NEWUSER"
-    read -p "¿Es correcto? (Y/N): " opt
+    opt=$(request -m "¿Es correcto? (Y/N) " -v N)
     if [[ $opt == "n" ]] || [[ $opt == "n" ]];then
         read -e -p "Indique la ruta completa del directorio HOME: " PATH_HOME
     fi
@@ -196,6 +196,7 @@ function create_user() {
     echo -e "Nombre:\t\t$complete_name_user"
     echo -e "Grupo principal:\t$NEWGROUP"
     echo -e "Carpeta Home:\t$PATH_HOME"
+    opt=$(request -m "¿Es correcto? (Y/N) " -v N)
     if [[ $opt == "y" ]] || [[ $opt == "Y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         groupadd -f $NEWGROUP
         useradd -M -d $PATH_HOME -c "$complete_name_user" -g $NEWGROUP $NEWUSER
@@ -207,6 +208,8 @@ function create_user() {
 
 # Función para seleccionar el usuario que se desea de los que pertenecen al sistema
 # @param string $1 => Nombre de la variable donde se almacenará el usuario seleccionado
+# @param string $2 ()=>
+# @param string $3 =>
 function sel_user(){
 
     ! is_set $1 && merr "Falta el parámetro 1: nombre de la variable" && menu && exit
@@ -243,4 +246,43 @@ function sel_user(){
     done
 
     eval $1="${vtmp_users[$((vtmp_sel-1))]}"
+}
+
+# Función para seleccionar el usuario que se desea de los que pertenecen al sistema
+# @param string $1 => Nombre de la variable donde se almacenará el usuario seleccionado
+function sel_group(){
+
+    ! is_set $1 && merr "Falta el parámetro 1: nombre de la variable" && menu && exit
+
+    local vtmp_guid=$2 && ! is_set $vtmp_guid && vtmp_guid="1000"
+
+    local vtmp_i=0
+    local vtmp_groups
+    local vtmp_sel=""
+
+    local vtmp_filter=$(cat /etc/group | awk -vguid=$vtmp_guid -F':' '$3>=guid {print $1}')
+
+    # while must be in the main shell ! (Environment variables)
+    is_set $vtmp_filter && \
+    while read vtmp_group;
+    do
+        vtmp_groups[$vtmp_i]=$vtmp_group
+        ((vtmp_i+=1))
+        echo " $vtmp_i ) $vtmp_group"
+    done <<< "$vtmp_filter" # here-string
+
+    if [ "$vtmp_i" == "0" ]
+    then
+    merr "No existen usuarios disponibles, cree un usuario y reinicie la ejecución" && menu && exit
+    fi
+
+    vtmp_sel=$(request -m "Introduzca el número de grupo")
+
+    while [ "$vtmp_sel" -lt "1" ] || [ "$vtmp_sel" -gt "$vtmp_i" ];
+    do
+        merr "Opción inválida..." --no-break
+        vtmp_sel=$(request -m "Introduzca el número de grupo")
+    done
+
+    eval $1="${vtmp_groups[$((vtmp_sel-1))]}"
 }
