@@ -26,7 +26,7 @@ path="$(dirname "$0")"
 source "$path/functions-depends.sh"
 
 # Funciónm para habilitar/deshabilitar el SELinux
-function selinux() {
+function selinux {
     /usr/sbin/sestatus
     if [[ "$(/usr/sbin/getenforce)" == "Disabled" ]]; then
         opt=$(request -m "¿Desea Activarlo? Y/N " -v N)
@@ -49,9 +49,65 @@ function selinux() {
     fi
 }
 
+# Funcion privada que se encarga de configurar correctamente el firewalld
+# se usa para abrir los puertos necesarios, para una instalación desde 0
+#
+# esta a mitad de hacer, hace falta sacar una lista de zonas activas
+# una lista de servicios asignados a la zona activa
+# poner una zona activa por defecto y que el usuario la seleccione de la lista
+function config_firewalld {
+  # se realiza esta opción para tener en cuenta pusibles modificaciones
+  firewall-cmd --reload > /dev/null 2>&1
+  # Mostrar las zonas activas
+  ACTIVE_ZONE=$(firewall-cmd --get-active-zone | head -n1)
+  # funcion para añadir un nuevo servicio a firewalld
+  firewalld_new_service webmin 10000 tcp
+  # añadimos el servicio a la zona activa
+  firewall-cmd --permanent --zone=$ACTIVE_ZONE --add-service=webmin
+  # esto tenemos que usarlo si el servicio ya esta asignado a la zona
+  #firewall-cmd --permanent --zone=$ACTIVE_ZONE --remove-service=webmin
+}
+
+# Funcion privada para crear un nuevo servico para firewalld
+# Uso:
+#   firewalld_new_service webmin 1000 tcp
+# @param string $1 ==> Nombre del servicio
+# @param string $2 ==> puertos del servicio separados por comas
+# @param string $3 ==> protocolo del servicio
+function firewalld_new_service {
+  if is_set $1 && is_set $2 && is_set $2; then
+    # se realiza esta opción para tener en cuenta pusibles modificaciones
+    firewall-cmd --reload > /dev/null 2>&1
+    # hay que comprobar si el servicio esta creado y darle la posibilidad al
+    # usuario de elimarlo y volverlo a crear por completo
+    if [[ $1 == $(firewall-cmd --info-service=$1 2>/dev/null | head -n1) ]]; then
+      echo "El servicio: $1 ya existe,"
+      opt=$(request -m "¿Quiere borrarlo y volver a crearlo? S/N " -v N)
+      if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+        # Borramos el servicio que ya existe
+        firewall-cmd --permanent --delete-service=$1
+        # Creamos el servicio para WebMin
+        firewall-cmd --permanent --new-service=$1
+        # añadimos el puerto al servicio
+        firewall-cmd --permanent --service=webmin --add-port=$2/$3
+      fi
+    else
+      echo "El servicio: $1 NO existe,"
+      # Creamos el servicio para WebMin
+      firewall-cmd --permanent --new-service=$1
+      # añadimos el puerto al servicio
+      firewall-cmd --permanent --service=webmin --add-port=$2/$3
+    fi
+  else
+    echo "faltán parámetros.."
+  fi
+}
+
 # Funciónm para habilitar/deshabilitar el firewalld
-function firewall() {
+function firewall {
     local state=$(firewall-cmd --state)
+    # se realiza esta opción para tener en cuenta pusibles modificaciones
+    firewall-cmd --reload > /dev/null 2>&1
     if [[ $state == "running" ]];then
       echo "Estado del FirewallD: $state"
       opt=$(request -m "¿Desea detener el firewall? S/N " -v N)
@@ -59,7 +115,10 @@ function firewall() {
         systemctl stop firewalld.service
         opt=$(request -m "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " -v N)
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+            # tienes que añadir al servicio de firewalld un comando de mask para que se enmascare
+            # por que si no cuando se reinicia se vuelve a activar
             systemctl disable firewalld.service
+            systemctl mask firewalld.service
         fi
         echo "Estado del demonio del FirewallD: "
         systemctl status firewalld.service
@@ -67,10 +126,15 @@ function firewall() {
     else
       opt=$(request -m "¿Desea habilitar el firewall? S/N " -v N)
       if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+        systemctl unmask firewalld.service
         systemctl start firewalld.service
+        config_firewalld
+        systemctl restart firewalld.service
         opt=$(request -m "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " -v N)
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
+            # habilitar los puertos necesarios para la instalación, webmin (crear el servicio), ssh, cockpit
             systemctl enable firewalld.service
+
         fi
         echo "Estado del demonio del FirewallD: "
         systemctl status firewalld.service
@@ -80,7 +144,7 @@ function firewall() {
 
 # Función para mostrar y comprobar cuales son las direcciones IP
 # Sin parámetros de entrada
-function network_check() {
+function network_check {
     IP_LIST=($(ifconfig | awk '/inet /{print substr($2,1)}'))
     for ip in ${IP_LIST[@]}; do
         echo $ip
@@ -102,7 +166,7 @@ function network_check() {
 
 # Función para comprobar la conectividad con internet
 # Sin parámetros de entrada
-function internet_check() {
+function internet_check {
     local count=($(ping $TEST_IP -c 5 | awk '/time=/{print substr($1,1)}'))
     if [[ ${#count[@]} -gt "4" ]]; then
         echo "Hay conectividad exterior"
@@ -113,7 +177,7 @@ function internet_check() {
 
 # Función para crear el mensaje de ISSUE
 # parámetro 1 sirve para dar nombre al producto
-function issue_msg() {
+function issue_msg {
     echo "Se esta generando el mensaje que saldrá en la consola de inicio de sesión del servidor"
     if [ -e $ISSUE_FILE ];then
         rm $ISSUE_FILE
@@ -138,7 +202,7 @@ function issue_msg() {
 }
 
 # Función que cambia el puerto de administración de cockpit al que quiere el usuario
-function change_cockpit_port() {
+function change_cockpit_port {
     read -p "Que puerto desea: (set by default $COCKPIT_DEFAULT_PORT)" PORT
     if [ -z $PORT ];then
         PORT=$COCKPIT_DEFAULT_PORT
@@ -167,7 +231,7 @@ function change_cockpit_port() {
 }
 
 # Funcion que se encarga de cambiar el nombre del equipo
-function change_hostname() {
+function change_hostname {
   while [[ -z $hostname ]]; do
     hostname=$(request -m "Introduzca el nombre de Host")
     if [ -z $hostname ];then
@@ -192,13 +256,13 @@ function change_hostname() {
 }
 
 # Función para instalar el administrador de consola de NetworkManager
-function install_nmtui() {
+function install_nmtui {
     echo "Instalando el Gestor de Consola de NetworkManager"
     dnf -y install NetworkManager-tui.x86_64
 }
 
 # Función para instalar el administrador de consola de NetworkManager
-function install_teamviewer() {
+function install_teamviewer {
     echo "Comienza la instalación de TeamViewer"
     if [ -e $TEMP_FILE ];then
         rm $TEMP_FILE
@@ -210,13 +274,13 @@ function install_teamviewer() {
 }
 
 # Función para instalar el servidor de VNC
-function install_VNC() {
+function install_VNC {
     echo "# Función para instalar el servidor de VNC"
 }
 
 # Función para presentar el Menú
 # Sin parámetros de entrada
-function menu() {
+function menu {
     clear;
     echo
     echo "           ****************************************"
