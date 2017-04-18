@@ -15,7 +15,7 @@ source "$path/functions-depends.sh"
 DEPENDS_THIS_SCRIPT=(ifconfig nmap find git) # Dependencias necesarias
 
 # VARIABLES GLOBALES DEL SCRIPT
-TEST_IP=62.15.168.50
+TEST_IP=8.8.8.8
 TEMP_FILE=/tmp/file.tmp
 PATH_DATA_WEB=/datawww/html
 PATH_DATA_VCOMM=/datawww/datavcomm

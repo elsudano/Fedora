@@ -12,7 +12,7 @@
 # poner estas en el array para que se las pase a function-depends DEPENDS=(dnf git perl wget rpm) # Dependencias necesarias
 
 # VARIABLES GLOBALES DEL SCRIPT
-TEST_IP=62.15.168.50
+TEST_IP=8.8.8.8
 REPO_WEBMIN_FILE=/etc/yum.repos.d/webmin.repo
 
 # INCLUDES

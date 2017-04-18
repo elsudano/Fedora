@@ -16,6 +16,7 @@ DIRS=(/usr/bin /usr/sbin /bin)
 # TEST_IP=62.15.168.50
 FALSE=1
 TRUE=0
+SEPARATOR=','
 TEST_IP=8.8.8.8
 
 ################################################################################
@@ -115,10 +116,10 @@ function request() {
 # Función para obtener el valor del parámetro a continuación del indicado
 # Uso:
 #   getparamv -n -p P1 -n N1
-#   getparamv -x "$@"
+#   getparamv -x "$@" devuelve el primer valor del array
 # @param string $1 ==> Parámetro a buscar dentro del conjunto de parámetros
 # @param string $2 ==> Parámetros a buscar
-function getparamv() {
+function getparamv {
     local retval=""
     for i in $(seq 2 $#) ; do
         if [ "${@:$i:1}" == "$1" ] && is_set "${@:$((i+1)):1}"; then
@@ -127,6 +128,56 @@ function getparamv() {
         fi
     done
     echo $retval
+}
+
+# Función para obtener el valor de un parametro dado, esta función da la opción
+# de poder utilizar parametros "cortos" o "largos"
+#
+# @param $1 string con los parametros que se desean buscar separados por comas
+#   ejem: (-p,--ports)
+# @param $2 array con los parametros y los valores en donde se desea buscar
+#   ejem: (-t 60 --ports 45,67,89 --name dns -j tcp) == $@
+# Uso:
+# valor = $(getparam -p,--ports "$@")
+function getparamva {
+    local retval=""
+    
+    for i in $(str_to_array $1); do
+      retval=$(getparamv $i $2)
+      if is_set $retval; then
+        break;
+      fi
+    done
+    echo $retval
+}
+
+# Función para comprobar que existe un parámetro
+function hasparam {
+    local retval=$FALSE
+    for i in $(seq 2 $#); do
+        if [ "${@:$i:1}" == "$1" ]; then
+            retval=$TRUE
+            break
+        fi
+    done
+    return $retval
+}
+
+# Funcion que se encarga de convertir una cadena de texto en un array
+# @param $1 string cadena a convertir en array
+# @param $2 string separador por el cual se dividira la cadena [optional]
+#
+# @note si el segundo parámetro no se utiliza el separador es el que se define al
+# principio del script.
+#
+# Uso:
+#   str_to_array estos,son,los,parametros ,
+function str_to_array {
+  if is_set $2; then
+      SEPARATOR=$2
+  fi
+  IFS=$SEPARATOR read -ra tmp <<< "$1"
+  echo ${tmp[@]}
 }
 
 # Funcion de wrapper para find
@@ -140,17 +191,7 @@ function search(){
     echo $retval
 }
 
-# Función para comprobar que existe un parámetro
-function hasparam() {
-    local retval=$FALSE
-    for i in $(seq 2 $#); do
-        if [ "${@:$i:1}" == "$1" ]; then
-            retval=$TRUE
-            break
-        fi
-    done
-    return $retval
-}
+
 
 # Muestra información relevante para el usuario
 function minfo() {

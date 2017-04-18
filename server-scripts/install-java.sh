@@ -8,16 +8,17 @@
 # Uso: install-java.sh
 
 
-# VARIABLES ESTATICAS
-DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
-DIRS=(/usr/bin /usr/sbin /bin) # Directorios de busqueda
-MASKS_CIDR=(32 31 30 29 28 27 26 25 24 23 22)
-MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.255.255.240 255.255.255.224 255.255.255.192 255.255.255.128 255.255.255.0 255.255.254.0 255.255.252.0)
+# VARIABLES ESTATICAS DEL SCRIPT
+DEPENDS_THIS_SCRIPT=(ifconfig nmap find git) # Dependencias necesarias
 
-# VARIABLES GLOBALES
-TEST_IP=62.15.168.50
+# VARIABLES GLOBALES DEL SCRIPT
+TEST_IP=8.8.8.8
 TEMP_FILE=/tmp/file.tmp
 HTTP_DONWLOAD_JAVA=http://javadl.oracle.com/webapps/download/AutoDL?BundleId=218822_e9e7ea248e2c4826b92b3f075a80e441
+
+# INCLUDES
+path="$(dirname "$0")"
+source "$path/functions-depends.sh"
 
 # FUNCIONES
 

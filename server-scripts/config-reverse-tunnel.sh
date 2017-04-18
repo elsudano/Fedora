@@ -16,7 +16,7 @@ MASKS_DEC=(255.255.255.255 255.255.255.254 255.255.255.252 255.255.255.248 255.2
 
 # VARIABLES GLOBALES
 # ip de pruebas
-TEST_IP=62.15.168.50
+TEST_IP=8.8.8.8
 # fichero temporal
 TEMP_FILE=/tmp/file.tmp
 # cantidad de pines que se realizan

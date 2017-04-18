@@ -19,7 +19,7 @@ DIR_OVERRIDE=/etc/systemd/system/httpd.service.d
 FILE_OVERRIDE=/etc/systemd/system/httpd.service.d/override.conf
 
 # VARIABLES GLOBALES DEL SCRIPT
-TEST_IP=62.15.168.50
+TEST_IP=8.8.8.8
 TEMP_FILE=/tmp/file.tmp
 REPO=0
 
