@@ -7,10 +7,8 @@
 # Opciones: Ninguna
 # Uso: initial-config.sh
 
-
 # VARIABLES ESTATICAS DEL SCRIPT
 # poner esto como el resto de scripts DEPENDS=(cat) # Dependencias necesarias
-
 
 # VARIABLES GLOBALES DEL SCRIPT
 TEST_IP=8.8.8.8
@@ -23,19 +21,19 @@ path="$(dirname "$0")"
 source "$path/functions-depends.sh"
 
 #Función que se encarga de configurar las exclusiones de paquetes para dnf
-function config_dnf(){
+function config_dnf {
     echo "Si desea actualizar el sistema por completo tiene que realizar la actualización, desde el panel de control de webmin"
     echo "exclude=kernel* mariadb* postgresql* apache* httpd* mod_ssl* mysql* php* java*" >> $DNF_CONF_FILE
 }
 
 #Función que se encarga de instalar el monitor de sistema htop
-function install_htop(){
+function install_htop {
     echo "Instalación de monitor htop"
     dnf -y install htop.x86_64
 }
 
 #Función que se encarga de instalar y configura el demonio para la sincronización de la hora
-function config_ntpd(){
+function config_ntpd {
     echo "Instalación de NTPd"
     dnf -y install ntp.x86_64
     dnf -y install ntpdate.x86_64
@@ -52,6 +50,13 @@ function config_ntpd(){
     echo "server hora.roa.es iburst" >> $NTP_CONFIG_FILE
     echo "Comprobando el servicio"
     ntpq -p
+}
+
+function production_permissions {
+    # Este es el comando que hay que usar para poner los permisos de las carpetas
+    # y los archivos de un servidor web de producción
+    #find $DIR -type d -exec chmod 754 {} \; # --> para las carpetas
+    #find $DIR -type f -exec chmod 644 {} \; # --> para los ficheros
 }
 
 # Función para presentar el Menú
