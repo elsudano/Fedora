@@ -12,7 +12,7 @@
 # poner todo esto como en los demas DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
 
 # VARIABLES GLOBALES DEL SCRIPT
-TEST_IP=62.15.168.50
+TEST_IP=8.8.8.8
 TEMP_FILE=/tmp/file.tmp
 
 # INCLUDES

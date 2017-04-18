@@ -12,7 +12,7 @@
 DEPENDS_THIS_SCRIPT=(ifconfig nmap find git) # Dependencias necesarias
 
 # VARIABLES GLOBALES DEL SCRIPT
-TEST_IP=62.15.168.50
+TEST_IP=8.8.8.8
 SELINUX_FILE=/etc/selinux/config
 TEMP_FILE=/tmp/file.tmp
 ISSUE_FILE=/etc/issue
@@ -57,11 +57,11 @@ function selinux {
 # poner una zona activa por defecto y que el usuario la seleccione de la lista
 function config_firewalld {
   # se realiza esta opción para tener en cuenta pusibles modificaciones
-  firewall-cmd --reload > /dev/null 2>&1
+  firewall-cmd --reload >/dev/null 2>&1
   # Mostrar las zonas activas
   ACTIVE_ZONE=$(firewall-cmd --get-active-zone | head -n1)
   # funcion para añadir un nuevo servicio a firewalld
-  firewalld_new_service webmin 10000 tcp
+  firewalld_new_service --name webmin --ports 10000 -t tcp,udp
   # añadimos el servicio a la zona activa
   firewall-cmd --permanent --zone=$ACTIVE_ZONE --add-service=webmin
   # esto tenemos que usarlo si el servicio ya esta asignado a la zona
@@ -71,43 +71,56 @@ function config_firewalld {
 # Funcion privada para crear un nuevo servico para firewalld
 # Uso:
 #   firewalld_new_service webmin 1000 tcp
-# @param string $1 ==> Nombre del servicio
-# @param string $2 ==> puertos del servicio separados por comas
-# @param string $3 ==> protocolo del servicio
+# @param string -n ó --name ==> Nombre del servicio
+# @param string -p ó --ports ==> puertos del servicio separados por comas
+# @param string -t ó --protocols ==> protócolos del servicio separados por comas
+#
+# Uso:
+# firewalld_new_service -n webmin --ports 45,67,89 --protocol tcp
 function firewalld_new_service {
-  if is_set $1 && is_set $2 && is_set $2; then
-    # se realiza esta opción para tener en cuenta pusibles modificaciones
-    firewall-cmd --reload > /dev/null 2>&1
-    # hay que comprobar si el servicio esta creado y darle la posibilidad al
-    # usuario de elimarlo y volverlo a crear por completo
-    if [[ $1 == $(firewall-cmd --info-service=$1 2>/dev/null | head -n1) ]]; then
-      echo "El servicio: $1 ya existe,"
+  local name=$(getparamva -m,--name "$@")
+  local ports=$(getparamva -p,--ports "$@")
+  local protocols=$(getparamva -t,--protocols "$@")
+
+  if is_set $name && is_set $ports && is_set $protocols; then
+    # se realiza esta opción para tener en cuenta posibles modificaciones
+    firewall-cmd --reload >/dev/null 2>&1 # se pone /dev/null para que no salga la palabra success
+    if [[ $(firewall-cmd --info-service=$name 2>/dev/null | head -n1) ]]; then # se redirige el error a /dev/null
+      echo "El servicio: $name ya existe,"
       opt=$(request -m "¿Quiere borrarlo y volver a crearlo? S/N " -v N)
       if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         # Borramos el servicio que ya existe
         firewall-cmd --permanent --delete-service=$1
         # Creamos el servicio para WebMin
         firewall-cmd --permanent --new-service=$1
-        # añadimos el puerto al servicio
-        firewall-cmd --permanent --service=webmin --add-port=$2/$3
+        for proto in $protocols; do
+          for port in $ports; do
+            # añadimos el puerto al servicio
+            firewall-cmd --permanent --service=webmin --add-port=$port/$proto
+          done
+        done
       fi
     else
-      echo "El servicio: $1 NO existe,"
+      echo "El servicio: $name NO existe,"
       # Creamos el servicio para WebMin
       firewall-cmd --permanent --new-service=$1
-      # añadimos el puerto al servicio
-      firewall-cmd --permanent --service=webmin --add-port=$2/$3
+      for proto in $protocols; do
+        for port in $ports; do
+          # añadimos el puerto al servicio
+          firewall-cmd --permanent --service=$1 --add-port=$port/$proto
+        done
+      done
     fi
   else
-    echo "faltán parámetros.."
+    echo "faltán parámetros en la función firewalld_new_service..."
   fi
 }
 
 # Funciónm para habilitar/deshabilitar el firewalld
 function firewall {
-    local state=$(firewall-cmd --state)
-    # se realiza esta opción para tener en cuenta pusibles modificaciones
-    firewall-cmd --reload > /dev/null 2>&1
+    local state=$(firewall-cmd --state 2>&1 ) # 2>/dev/null 2>&1 )
+    # se realiza esta opción para tener en cuenta posibles modificaciones
+    firewall-cmd --reload >/dev/null 2>&1 # se pone /dev/null para que no salga la palabra success
     if [[ $state == "running" ]];then
       echo "Estado del FirewallD: $state"
       opt=$(request -m "¿Desea detener el firewall? S/N " -v N)
@@ -124,12 +137,13 @@ function firewall {
         systemctl status firewalld.service
       fi
     else
+      echo "Estado del FirewallD: $state"
       opt=$(request -m "¿Desea habilitar el firewall? S/N " -v N)
       if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         systemctl unmask firewalld.service
         systemctl start firewalld.service
         config_firewalld
-        systemctl restart firewalld.service
+        firewall-cmd --reload >/dev/null 2>&1 # se pone /dev/null para que no salga la palabra success
         opt=$(request -m "¿Quiere realizar los cambios de forma permanente (on boot)? S/N " -v N)
         if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
             # habilitar los puertos necesarios para la instalación, webmin (crear el servicio), ssh, cockpit
@@ -173,6 +187,9 @@ function internet_check {
     else
         echo "No hay conectividad exterior"
     fi
+    for i in $(str_to_array estos,son,los,parametros); do
+      echo $i
+    done
 }
 
 # Función para crear el mensaje de ISSUE

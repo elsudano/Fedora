@@ -15,7 +15,7 @@
   # DIRS=(/usr/bin /usr/sbin /bin /var/lib/mysql/ /var/run/mysqld/ /usr/local/mysql/data/) # Directorios de busqueda
 
 # VARIABLES GLOBALES DEL SCRIPT
-TEST_IP=62.15.168.50
+TEST_IP=8.8.8.8
 TEMP_FILE=/tmp/file.tmp
 ADMIN_USER_DB=admindb
 ADMIN_USER_PASS=password

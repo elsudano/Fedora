@@ -13,7 +13,7 @@
 
 
 # VARIABLES GLOBALES DEL SCRIPT
-TEST_IP=62.15.168.50
+TEST_IP=8.8.8.8
 DNF_CONF_FILE=/etc/dnf/dnf.conf
 NTP_CONFIG_FILE=/etc/ntp.conf
 TEMP_FILE=/tmp/file.tmp
