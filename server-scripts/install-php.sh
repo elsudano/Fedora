@@ -134,6 +134,8 @@ function install_modules_php56() {
       dnf -y install php56-php-xml.x86_64;
       # gd images
       dnf -y install php56-php-gd.x86_64;
+      # operaciones matematicas bcmath 
+      dnf -y install php56-php-bcmath.x86_64;
       systemctl restart httpd.service;
     else
       echo "opción no valida"
@@ -158,6 +160,8 @@ function install_modules_php70() {
     dnf -y install php-xml.x86_64;
     # gd images
     dnf -y install php-gd.x86_64;
+    # operaciones matematicas bcmath 
+    dnf -y install php-bcmath.x86_64;
     systemctl restart httpd.service;
 }
 

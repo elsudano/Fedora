@@ -55,8 +55,8 @@ function config_ntpd {
 function production_permissions {
     # Este es el comando que hay que usar para poner los permisos de las carpetas
     # y los archivos de un servidor web de producción
-    #find $DIR -type d -exec chmod 754 {} \; # --> para las carpetas
-    #find $DIR -type f -exec chmod 644 {} \; # --> para los ficheros
+    #find $DIR -type d -exec chmod 770 {} \; # --> para las carpetas
+    #find $DIR -type f -exec chmod 640 {} \; # --> para los ficheros
 }
 
 # Función para presentar el Menú

@@ -14,7 +14,7 @@ DEPENDS_THIS_SCRIPT=(ifconfig nmap find git) # Dependencias necesarias
 # VARIABLES GLOBALES DEL SCRIPT
 TEST_IP=8.8.8.8
 TEMP_FILE=/tmp/file.tmp
-HTTP_DONWLOAD_JAVA=http://javadl.oracle.com/webapps/download/AutoDL?BundleId=218822_e9e7ea248e2c4826b92b3f075a80e441
+HTTP_DONWLOAD_JAVA=http://javadl.oracle.com/webapps/download/AutoDL?BundleId=220304_d54c1d3a095b4ff2b6607d096fa80163
 
 # INCLUDES
 path="$(dirname "$0")"
