@@ -117,6 +117,11 @@ _isroot=false
       export ANDROID_HOME=/opt/android-sdk
     fi
   #}}}
+  # GO LANGUAGE {{{
+    if [[ -d "$HOME/go" ]]; then
+      export GOPATH=$HOME/go
+    fi
+  #}}}
   # CHROME {{{
     if which google-chrome-stable &>/dev/null; then
       export CHROME_BIN=/usr/bin/google-chrome-stable
@@ -197,7 +202,7 @@ _isroot=false
   #}}}
   # SSH {{{
     alias conectar='ssh -i /home/usuario/.ssh/id_rsa'
-    
+
   #}}}
   # NETWORKING {{{
     if ! $_isroot; then
