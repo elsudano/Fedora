@@ -1,0 +1,12 @@
+---
+
+- hosts: '{{ target }}'
+  remote_user: usuario
+  environment:
+   GOPATH: "/home/$USER/go"
+  tasks:
+  - name: Crear HOME de go
+    file:
+     path: /home/$USER/go
+     state: directory
+     mode: 0755

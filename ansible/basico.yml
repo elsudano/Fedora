@@ -1,0 +1,26 @@
+---
+
+- hosts: '{{ target }}'
+  remote_user: usuario
+  become: yes
+  become_method: su
+  become_user: root
+  tasks:
+  - name: Actualizacion
+    dnf:
+      name: "*"
+      state: latest
+  - name: Instalar Git
+    dnf:
+      name: httpd
+      #enablerepo: testing
+      state: latest
+  - name: Instalar GoLang
+    dnf:
+      name: golang
+      state: latest
+    become: true
+  - name: Instalar Cockpit
+    dnf:
+      name: cockpit
+      state: latest

@@ -1,0 +1,12 @@
+---
+
+- hosts: '{{ target }}'
+  remote_user: usuario
+  environment:
+   #GOPATH: "/home/$USER/go"
+  tasks:
+  - name: Instalar el Entorno gráfico
+    dnf:
+      name: "@KDE,@base-x,@Módulos habituales de NetworkManager,@Soporte para Hardware,@Soporte para la impresión,@Multimedia"
+      state: latest
+    become: true
