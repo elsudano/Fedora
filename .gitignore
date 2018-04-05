@@ -16,6 +16,6 @@ sftp-config.json
 # Sublime Project
 Fedora.sublime-project
 Fedora.sublime-workspace
-python-scripts/venv/
 
-python-scripts/Test-Sound/venv/
+# Python code
+*.pyc
