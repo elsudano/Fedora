@@ -12,9 +12,9 @@
 # poner todo esto como en los demas DEPENDS=(ifconfig nmap find git) # Dependencias necesarias
 RPM_EPEL=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 RPM_WEBTATIC=https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-RPM_FUSION_FREE=https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-25.noarch.rpm
-RPM_FUSION_NOFREE=https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-25.noarch.rpm
-RPM_REMI=http://rpms.famillecollet.com/fedora/remi-release-25.rpm
+RPM_FUSION_FREE=https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-27.noarch.rpm
+RPM_FUSION_NOFREE=https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-27.noarch.rpm
+RPM_REMI=http://rpms.famillecollet.com/fedora/remi-release-27.rpm
 DIR_OVERRIDE=/etc/systemd/system/httpd.service.d
 FILE_OVERRIDE=/etc/systemd/system/httpd.service.d/override.conf
 
@@ -80,15 +80,34 @@ function install_php56(){
 function install_php70(){
   REPO=$(request -m "¿Que repositorio quiere usar? 1-WebStatic / 2-REMI / 3-Fedora" -v 3)
   if [[ $REPO == "1" ]]; then
-    echo "Comienza la instalación de PHP 5.6 de WebStatic"
+    echo "Comienza la instalación de PHP 7.0 de WebStatic"
     dnf -y install php70w.x86_64;
     systemctl restart httpd.service;
   elif [[ $REPO == "2" ]]; then
-    echo "Comienza la instalación de PHP 5.6 de REMI"
+    echo "Comienza la instalación de PHP 7.0 de REMI"
     dnf -y install php70-php.x86_64;
     systemctl restart httpd.service;
   elif [[ $REPO == "3" ]]; then
     echo "Comienza la instalación de PHP 7.0 desde Fedora"
+    dnf -y install php.x86_64;
+    systemctl restart httpd.service;
+  else
+    echo "opción no valida"
+  fi
+}
+# Función que se encarga realizar la instalación mínima de PHP ver. 7.0
+function install_php72(){
+  REPO=$(request -m "¿Que repositorio quiere usar? 1-WebStatic / 2-REMI / 3-Fedora" -v 3)
+  if [[ $REPO == "1" ]]; then
+    echo "Comienza la instalación de PHP 7.2 de WebStatic"
+    dnf -y install php72w.x86_64;
+    systemctl restart httpd.service;
+  elif [[ $REPO == "2" ]]; then
+    echo "Comienza la instalación de PHP 7.2 de REMI"
+    dnf -y install php72-php.x86_64;
+    systemctl restart httpd.service;
+  elif [[ $REPO == "3" ]]; then
+    echo "Comienza la instalación de PHP 7.2 desde Fedora"
     dnf -y install php.x86_64;
     systemctl restart httpd.service;
   else
@@ -162,6 +181,39 @@ function install_modules_php70() {
     dnf -y install php-gd.x86_64;
     # operaciones matematicas bcmath 
     dnf -y install php-bcmath.x86_64;
+    systemctl restart httpd.service;
+}
+
+# Función que se encarga de instalar y configurar los modulos adicionales de PHP 7.2
+function install_modules_php72() {
+    # mbstring module
+    dnf -y install php72-php-mbstring.x86_64;
+    # mcrypt module
+    dnf -y install php72-php-pecl-mcrypt.x86_64;
+    # para trabajar con bases de datos
+    dnf -y install php72-php-pdo.x86_64
+    # mssql mssqli PDOmssql module
+    dnf -y install php72-php-mssql.x86_64;
+    # mysql mysqli PDOmysql module
+    dnf -y install php72-php-mysqlnd.x86_64;
+    # pgsql PDOpgsql module
+    dnf -y install php72-php-pgsql.x86_64;
+    # xmlrpc module
+    dnf -y install php72-php-xmlrpc.x86_64;
+    # xsl wddx shmop xmlwriter xmlreader xml modules
+    dnf -y install php72-php-xml.x86_64;
+    # gd images
+    dnf -y install php72-php-gd.x86_64;
+    # operaciones matematicas bcmath 
+    dnf -y install php72-php-bcmath.x86_64;
+    # conversión de caracteres unicode 
+    dnf -y install php72-php-intl.x86_64;
+    # cache para php
+    dnf -y install php72-php-opcache.x86_64
+    # 
+    dnf -y install php72-php-pecl-apcu.x86_64
+    # para trabajar con ficheros json desde php
+    dnf -y install php72-php-json.x86_64
     systemctl restart httpd.service;
 }
 
@@ -297,12 +349,14 @@ function menu() {
     echo "           * 2.- Instalar repositorio de PHP      *"
     echo "           * 3.- Instalar PHP 5.6                 *"
     echo "           * 4.- Instalar PHP 7.0                 *"
-    echo "           * 5.- Instalar modulos de PHP 5.6      *"
-    echo "           * 6.- Instalar modulos de PHP 7.0      *"
-    echo "           * 7.- Instalar Oracle OCI8             *"
-    echo "           * 8.- Configurar PHP.ini               *"
-    echo "           * 9.- Crear fichero PHPINFO            *"
-    echo "           * 10.- Eliminar fichero PHPINFO        *"
+    echo "           * 5.- Instalar PHP 7.2                 *"
+    echo "           * 6.- Instalar modulos de PHP 5.6      *"
+    echo "           * 7.- Instalar modulos de PHP 7.0      *"
+    echo "           * 8.- Instalar modulos de PHP 7.2      *"
+    echo "           * 9.- Instalar Oracle OCI8             *"
+    echo "           * 10.- Configurar PHP.ini              *"
+    echo "           * 11.- Crear fichero PHPINFO           *"
+    echo "           * 12.- Eliminar fichero PHPINFO        *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -333,31 +387,41 @@ function menu() {
         menu;
         ;;
         5)
-        install_modules_php56;
+        install_php72;
         pause;
         menu;
         ;;
         6)
-        install_modules_php70;
+        install_modules_php56;
         pause;
         menu;
         ;;
         7)
-        install_oracle;
-        pause -m;
+        install_modules_php70;
+        pause;
         menu;
         ;;
         8)
-        config_phpini;
+        install_modules_php72;
         pause;
         menu;
         ;;
         9)
+        install_oracle;
+        pause -m;
+        menu;
+        ;;
+        10)
+        config_phpini;
+        pause;
+        menu;
+        ;;
+        11)
         create_phpinfo;
         pause;
         menu;
         ;;
-        10)
+        12)
         delete_phpinfo;
         pause;
         menu;

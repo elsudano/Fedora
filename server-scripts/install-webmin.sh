@@ -14,6 +14,15 @@
 # VARIABLES GLOBALES DEL SCRIPT
 TEST_IP=8.8.8.8
 REPO_WEBMIN_FILE=/etc/yum.repos.d/webmin.repo
+BASE_DIR_MODULES=/usr/libexec/webmin/
+NAME_OF_MODULES=(adsl-client bind8 bacula-backup bandwidth burner cluster-passwd
+cluster-copy cluster-cron cluster-shell cluster-software cluster-usermin
+cluster-useradmin cluster-webmin dovecot exim fail2ban fetchmail heartbeat
+ipsec jabber firewall firewall6 nis openslp pap ppp-client pptp-client
+pptp-server postfix proftpd procmail qmailadmin sendmail shorewall shorewall6
+spam squid sarg syslog-ng vgetty wuftpd webalizer iscsi-client iscsi-server
+iscsi-tgtd iscsi-target idmapd filter tunnel heartbeat mon exports nis lpadmin
+samba file)
 
 # INCLUDES
 path="$(dirname "$0")"
@@ -36,6 +45,21 @@ function install_webmin(){
     if [[ $opt == "y" ]] || [[ $opt == "y" ]] || [[ $opt == "s" ]] || [[ $opt == "S" ]];then
         reboot
     fi
+}
+
+# Función que nos permite eliminar los modulos que no vamos a usar
+function delete_modules(){
+    # TODO: esta función se puede optimizar de momento se queda así para realizar
+    # la instalación necesaria
+    echo "Eliminando modulos"
+    for MODULE in ${NAME_OF_MODULES[@]}
+    do
+      rm -fR $BASE_DIR_MODULES$MODULE
+      #echo "delete $BASE_DIR_MODULES$MODULE"
+    done
+    systemctl daemon-reload
+    systemctl restart webmin.service
+    echo "Recuerde actualizar los módulos desde la interfaz gráfica"
 }
 
 # Función que se encarga de la configuración miníma de WebMin
@@ -62,8 +86,9 @@ function menu() {
     echo "           * 1.- Comprobar dependencias           *"
     echo "           * 2.- Instalación de WebMin            *"
     echo "           * 3.- Configuración de WebMin          *"
-    echo "           * 4.- Instalación de modulos           *"
-    echo "           * 5.- Comprobar instalación WebMin     *"
+    echo "           * 4.- Borrado de modulos no usados     *"
+    echo "           * 5.- Instalación de modulos           *"
+    echo "           * 6.- Comprobar instalación WebMin     *"
     echo "           *                                      *"
     echo "           * 0.- Salir                            *"
     echo "           ****************************************"
@@ -89,11 +114,16 @@ function menu() {
         menu;
         ;;
         4)
-
+        delete_modules;
         pause;
         menu;
         ;;
         5)
+
+        pause;
+        menu;
+        ;;
+        6)
         check_instalation_webmin;
         pause;
         menu;
