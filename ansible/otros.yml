@@ -1,12 +1,29 @@
 ---
 
 - hosts: '{{ target }}'
-  remote_user: usuario
-  environment:
-   GOPATH: "/home/$USER/go"
+  remote_user: '{{ user }}'
   tasks:
-  - name: Crear HOME de go
-    file:
-     path: /home/$USER/go
-     state: directory
-     mode: 0755
+  - name: Install htop
+    become: yes
+    dnf:
+     name: "htop"
+     state: latest
+  - name: Install nano
+    become: yes
+    dnf:
+     name: "nano"
+     state: latest
+  - name: Install Git
+    dnf:
+      name: git
+      #enablerepo: testing
+      state: latest
+  - name: Instalar Cockpit
+    dnf:
+      name: cockpit
+      state: latest
+  - name: Reboot Machine
+    command: /sbin/shutdown -r
+    async: 0
+    poll: 0
+    ignore_errors: true

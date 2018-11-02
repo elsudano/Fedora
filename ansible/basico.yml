@@ -1,26 +1,29 @@
 ---
 
 - hosts: '{{ target }}'
-  remote_user: usuario
+  remote_user: '{{ user }}'
   become: yes
   become_method: su
   become_user: root
   tasks:
-  - name: Actualizacion
+  - name: Change Name of Machine
+    hostname:
+      name: '{{ namehost }}'
+  - name: Update system
     dnf:
       name: "*"
       state: latest
-  - name: Instalar Git
+  - name: Install requeriments of disable selinux
+    become: yes
     dnf:
-      name: httpd
-      #enablerepo: testing
+      name: "libselinux-python"
       state: latest
-  - name: Instalar GoLang
-    dnf:
-      name: golang
-      state: latest
-    become: true
-  - name: Instalar Cockpit
-    dnf:
-      name: cockpit
-      state: latest
+  - name: Disable SeLinux
+    become: yes
+    selinux:
+      state: disabled
+  - name: Stoping FirewallD
+    become: yes
+    systemd:
+      name: firewalld
+      state: stopped

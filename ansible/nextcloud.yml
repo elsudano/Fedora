@@ -1,0 +1,16 @@
+---
+
+- hosts: '{{ target }}'
+  remote_user: '{{ user }}'
+  become: yes
+  become_method: su
+  become_user: root
+  tasks:
+  - name: Update system
+    dnf:
+      name: "*"
+      state: latest
+  - name: Instalar Cockpit
+    dnf:
+      name: cockpit
+      state: latest

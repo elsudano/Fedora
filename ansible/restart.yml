@@ -1,0 +1,10 @@
+---
+
+- hosts: '{{ target }}'
+  remote_user: '{{ user }}'
+  tasks:
+  - name: Reboot Machine
+    command: /sbin/shutdown -r
+    async: 0
+    poll: 0
+    ignore_errors: true

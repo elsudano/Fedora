@@ -4,7 +4,11 @@ all:
   children:
     clients:
       hosts:
-        192.168.110.51:
-          ansible_host: 192.168.110.51
-        192.168.10.90:
-          ansible_host: 192.168.10.90
+        192.168.20.93:  # lr03
+          ansible_host: 192.168.20.93
+        192.168.20.94:  # lr04
+          ansible_host: 192.168.20.94
+        192.168.20.150: # gfs00
+          ansible_host: 192.168.20.150
+        192.168.20.25:  # deploy00
+          ansible_host: 192.168.20.25
