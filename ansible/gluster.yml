@@ -1,1 +1,12 @@
- 
+---
+
+- hosts: '{{ target }}'
+  remote_user: '{{ user }}'
+  become: yes
+  become_method: su
+  become_user: root
+  tasks:
+  - name: Install Gluster
+    dnf:
+      name: "gluster"
+      state: latest
