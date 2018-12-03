@@ -16,12 +16,12 @@
         mirrorlist=http://download.webmin.com/download/yum/mirrorlist
         enabled=1
         gpgcheck=0
-  #- name: Update system
-  #  dnf:
-  #    name: "*"
-  #    state: latest
+  - name: Update system
+    dnf:
+      name: "*"
+      state: latest
   - name: Update Repositories
-    command: dnf update
+    command: dnf check-update
   # no funciona el refresco de los repositorios 
   # tienes que hacerlo con dnf
   - name: Install webmin
@@ -32,7 +32,7 @@
   - name: Install python-firewall
     become: yes
     dnf:
-      name: "python-firewall"
+      name: "python3-firewall"
       state: latest
   - name: Install perl-Digest-MD5 for Webmin module
     become: yes
@@ -53,8 +53,14 @@
     command: firewall-cmd --permanent --new-service=webmin
   - name: Add port to Webmin service for FirewallD
     command: firewall-cmd --permanent --service=webmin --add-port=10000/tcp
+  - name: Which is a zone of firewallD?
+    shell: firewall-cmd --get-active-zone | head -n1
+    register: zone
+  #- debug: msg="{{zone.stdout}}"
   - name: Enable Webmin service in FirewallD
-    firewalld:
-      service: webmin
-      permanent: true
-      state: enabled
+    command: firewall-cmd --permanent --zone="{{zone.stdout}}" --add-service=webmin
+  #- name: Enable Webmin service in FirewallD
+  #     firewalld:
+  #     service: webmin
+  #     permanent: true
+  #     state: enabled
