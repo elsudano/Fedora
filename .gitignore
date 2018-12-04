@@ -22,3 +22,6 @@ Fedora.sublime-workspace
 
 #Ignore files of kate
 .kate-swp
+
+#Ignore all inventories
+ansible/inventory.yml
