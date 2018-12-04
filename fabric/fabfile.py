@@ -94,7 +94,9 @@ def _get_data():
 
 def _check_data():
     _test_vars()
-    prompt('\tAtención! Va a realizar operaciones importantes en la máquina destino.\n\tAsegúrese de que la IP y el nombre de la máquina son los correctos\n\tpulse 'y' para continuar o 'n' para salir: (y/n)', 'warning_data')
+    prompt('\n\tAtención! Va a realizar operaciones importantes en la máquina destino. \
+        \n\tAsegúrese de que la IP y el nombre de la máquina son los correctos \
+        \n\tpulse "y" para continuar o "n" para salir: (y/n)', 'warning_data')
     if env.warning_data == "Y" or env.warning_data == "y":
         abort("Saliendo de Fabric")
     elif env.warning_data == "N" or env.warning_data == "n":
@@ -107,12 +109,14 @@ def _check_data():
 def despliegue():
     _get_data()
     _test_vars()
-    prompt('\tAtención! Va a realizar operaciones importantes en la máquina destino.\n\tAsegúrese de que la IP y el nombre de la máquina son los correctos\n\tpulse 'y' para continuar o 'n' para salir: (y/n)', 'warning_data')
+    prompt('\n\tAtención! Va a realizar operaciones importantes en la máquina destino. \
+        \n\tAsegúrese de que la IP y el nombre de la máquina son los correctos \
+        \n\tpulse "y" para continuar o "n" para salir: (y/n)', 'warning_data')
     if env.warning_data == "Y" or env.warning_data == "y":
         _pre_despliegue()
         # Cuidado con el orden en el que se ejecutan las funciones
         _basico()
-        prompt('¿Desea instalar Webmin? [s/n]'), 'imput')
+        prompt('¿Desea instalar Webmin? [s/n]', 'imput')
         if env.imput == "S" or env.imput == "s":
         	_webmin()
         _post_despliegue()
@@ -139,8 +143,9 @@ def restart():
     print ("\tVariable Host: %(host_string)s" % env)
     print ("\tVariable Usuario: %(user)s" % env)
     print ("\tVariable Contrasena: %(password)s" % env)
-    env.warning_data = raw_input(
-        "\n\tAtención! Va a realizar operaciones importantes en la máquina destino.\n\tAsegúrese de que la IP y el nombre de la máquina son los correctos\n\tpulse 'y' para continuar o 'n' para salir: (y/n)")    
+    prompt('\tAtención! Va a realizar operaciones importantes en la máquina destino. \
+        \n\tAsegúrese de que la IP y el nombre de la máquina son los correctos \
+        \n\tpulse "y" para continuar o "n" para salir: (y/n)', 'warning_data')
     if env.warning_data == "Y" or env.warning_data == "y":
         local("sed '/%(host_string)s/d' ~/.ssh/known_hosts > ~/.ssh/known_hosts.tmp" % env)
         local('mv -f ~/.ssh/known_hosts.tmp ~/.ssh/known_hosts')
@@ -152,14 +157,14 @@ def restart():
 
 
 def upgrade_version():
-	_get_data()
-	_check_data()
+    _get_data()
+    _check_data()
     prompt('Indique el número de versión de Fedora a la que quiere actualizar:', 'version')
-	_pre_despliegue()
-	sudo('dnf upgrade --refresh -y')
-	sudo('dnf install dnf-plugin-system-upgrade -y')
-	sudo('dnf system-upgrade download --releasever=%(version)s -y' % env)
-	sudo('dnf system-upgrade reboot')
+    _pre_despliegue()
+    sudo('dnf upgrade --refresh -y')
+    sudo('dnf install dnf-plugin-system-upgrade -y')
+    sudo('dnf system-upgrade download --releasever=%(version)s -y' % env)
+    sudo('dnf system-upgrade reboot')
 
 
 def ayuda():
