@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 import os
 import getpass
-from fabric.api import env, local, run, sudo, hide, abort, prompt, reboot
+from fabric.api import hide, abort, prompt
+from fabric.operations import env, local, run, sudo, reboot
+from fabric.contrib.files import exists
 
 env.program = "ansible-playbook"
 
@@ -53,36 +55,23 @@ def _test_vars():
 
 def _pre_despliegue():
     with hide("running"):
+        run('mkdir ~/.ssh')
+        run('touch ~/.ssh/authorized_keys')
+        run('echo  > ~/.ssh/authorized_keys') # limpio todos los rastros de alguna key
         env.key_filename = "~/.ssh/id_rsa_%(host_string)s" % env
-        env.key_gen = True
         local("sed '/%(host_string)s/d' ~/.ssh/known_hosts > ~/.ssh/known_hosts.tmp" % env)
         local('mv -f ~/.ssh/known_hosts.tmp ~/.ssh/known_hosts')
         local("ssh-keygen -q -b 4096 -t rsa -f %(key_filename)s -C 'pass for %(host_string)s' -P ''" % env)
         local("sshpass -p '%(password)s' ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i %(key_filename)s %(user)s@%(host_string)s" % env)
-#        try:
-#            ## Se utiliza este try para comprobar si ya hay acceso a la maquina remota. En ese caso no tenemos que generar key y usamos la que ya tiene.
-#            env.pub_key = local("cat ~/.ssh/id_rsa.pub")
-#            print ('%(pub_key)s'  % env)
-#            abort("Saliendo de Fabric")
-#            run('ls')
-#            env.key_filename = "~/.ssh/id_rsa"                  #Key existente
-#            env.key_gen = False
-#        except Exception:
-#            print ("No he podido conectarme, creando llave de conexión que se eliminará mas tarde")
-#         local("ssh-keygen -q -b 4096 -t rsa -f %(key_filename)s -C 'pass for %(host_string)s' -P ''" % env)
-#         local("sshpass -p '%(password)s' ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i %(key_filename)s %(user)s@%(host_string)s" % env)
-#         env.key_filename = "~/.ssh/id_rsa_%(host_string)s" % env            #Key generada
-#            env.key_gen = True
 
 
 def _post_despliegue():
     with hide("running"):
-        if env.key_gen:
-            local("rm -f %(key_filename)s*" % env)
-            local("sshpass -p '%(password)s' ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa %(user)s@%(host_string)s" % env)
-        #run("sshpass -p '%(password)s' passwd root" % env)
-        # asegurate que la contraseña del administrador es la correcta
-        # tienes que setear la contraseya de ROOT real
+        local("rm -f %(key_filename)s*" % env)
+        local("sshpass -p '%(password)s' ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa %(user)s@%(host_string)s" % env)
+        prompt('¿Desea reiniciar el servidor? [y/n]', 'imput')
+        if env.imput == "Y" or env.imput == "Y":
+            reboot()
 
 
 def _get_data():
@@ -158,13 +147,19 @@ def restart():
 
 def upgrade_version():
     _get_data()
-    _check_data()
     prompt('Indique el número de versión de Fedora a la que quiere actualizar:', 'version')
-    _pre_despliegue()
-    sudo('dnf upgrade --refresh -y')
-    sudo('dnf install dnf-plugin-system-upgrade -y')
-    sudo('dnf system-upgrade download --releasever=%(version)s -y' % env)
-    sudo('dnf system-upgrade reboot')
+    prompt('\n\tAtención! Va a realizar operaciones importantes en la máquina destino. \
+        \n\tAsegúrese de que la IP y el nombre de la máquina son los correctos \
+        \n\tpulse "y" para continuar o "n" para salir: (y/n)', 'warning_data')
+    if env.warning_data == "Y" or env.warning_data == "y":
+        sudo('dnf upgrade --refresh -y')
+        sudo('dnf install dnf-plugin-system-upgrade -y')
+        sudo('dnf system-upgrade download --releasever=%(version)s -y' % env)
+        sudo('dnf system-upgrade reboot')
+    elif env.warning_data == "N" or env.warning_data == "n":
+        abort("Saliendo de Fabric")
+    else:
+        print ("\n\tOpción incorrecta")
 
 
 def ayuda():

@@ -4,9 +4,9 @@ all:
   children:
     clients:
       hosts:
-        192.168.20.93:    # lr03
+        192.168.20.93:    # LR03
           ansible_host: 192.168.20.93
-        192.168.20.94:    # lr04
+        192.168.20.94:    # LR04
           ansible_host: 192.168.20.94
         192.168.20.150:   # GFS00
           ansible_host: 192.168.20.150
@@ -14,7 +14,7 @@ all:
           ansible_host: 192.168.20.151
         192.168.20.152:   # GFS02
           ansible_host: 192.168.20.152
-        192.168.20.25:    # deploy00
+        192.168.20.25:    # DEPLOY00
           ansible_host: 192.168.20.25
         192.168.100.99:   # VCOMM-DEV-LNX
           ansible_host: 192.168.100.99
@@ -32,3 +32,5 @@ all:
           ansible_host: 192.168.200.173
         192.168.200.174:  # PLF01
           ansible_host: 192.168.200.174
+        192.168.20.59:  # CLEAN_50
+          ansible_host: 192.168.20.59
