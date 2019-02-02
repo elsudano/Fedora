@@ -19,6 +19,9 @@ Fedora.sublime-workspace
 
 # Python code
 *.pyc
+# para los entornos virtuales de Python
+\venv/
+
 
 #Ignore files of kate
 .kate-swp

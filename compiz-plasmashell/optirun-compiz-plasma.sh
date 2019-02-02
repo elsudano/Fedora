@@ -8,7 +8,8 @@
 # Opciones: Ninguna
 # Uso: ./optirun-compiz-plasmashell [start|stop]
 #------------------------------------------------------------Cabeceras de Configuración------------------------------------------------------------------------------------------------------------
-BINARIOS=(optirun bumblebeed killall fusion-icon compiz)
+#BINARIOS=(optirun bumblebeed killall fusion-icon compiz)
+BINARIOS=(optirun bumblebeed killall)
 # optirun	  aplicación que se usa para asignar los programas a la grafica dedicada se instala con bumblebee
 # bumblebeed  este es un demonio que se usa para arrancar la gráfica dedicada
 # killall     Para detener todas las instancias de un programa que ya esta iniciado
@@ -53,15 +54,15 @@ function start(){
     optirun kwalletmanager5 &
     sudo vncserver-x11-serviced
     sleep 1;
-    compiz ccp --replace --sm-disable --ignore-desktop-hints &
-    fusion-icon &
+    #compiz ccp --replace --sm-disable --ignore-desktop-hints &
+    optirun fusion-icon &
     yakuake &
 }
 
 #---------------------------------------------Función de parada-------------------------------------------------
 function stop(){
-    killall compiz
-    killall fusion-icon
+    #killall compiz
+    #killall fusion-icon
     killall emerald
     killall owncloud
     killall kwalletmanager5
@@ -74,9 +75,9 @@ function stop(){
 #---------------------------------------------Función para reiniciar-------------------------------------------
 function restart(){
 	killall plasmashell
-	killall compiz
-	killall fusion-icon
-	killall emerald
+	#killall compiz
+	#killall fusion-icon
+	#killall emerald
 	killall owncloud
 	killall kwalletmanager5
 	killall yakuake
@@ -87,8 +88,8 @@ function restart(){
 	optirun kwalletmanager5 &
 	sudo vncserver-x11-serviced
 	sleep 1;
-	compiz ccp --replace --sm-disable --ignore-desktop-hints &
-	fusion-icon &
+	#compiz ccp --replace --sm-disable --ignore-desktop-hints &
+	#optirun fusion-icon &
 	yakuake &
 }
 
