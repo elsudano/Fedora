@@ -444,6 +444,16 @@ _isroot=false
       esac
     }
   #}}}
+  # START VMs {{{
+    startvm() {
+       status=$(VBoxManage showvminfo AttackOfTitan | grep State: | awk '{ print $2 }')
+       if [[ $status -eq powered ]]; then
+         VBoxManage startvm $1 --type headless
+       fi
+       ssh cadelatorre@127.0.0.1 -p 2223
+    }
+    alias trabajo='startvm AttackOfTitan'
+  #}}}
   # ARCHIVE EXTRACTOR {{{
     extract() {
       clrstart="\033[1;34m"  #color codes
