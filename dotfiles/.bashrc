@@ -445,12 +445,19 @@ _isroot=false
     }
   #}}}
   # START VMs {{{
+  # This function presupose that the port 2223 is redirect to vm
     startvm() {
-       status=$(VBoxManage showvminfo AttackOfTitan | grep State: | awk '{ print $2 }')
-       if [[ $status -eq powered ]]; then
+       status=$(VBoxManage showvminfo $1 | grep State: | awk '{ print $2 }')
+       if [ $status == "powered" ] && [ ! -z "$2" ] && [ $2 == "nogui" ]; then
          VBoxManage startvm $1 --type headless
+         ssh cadelatorre@127.0.0.1 -p 2223
+       elif [ $status == "running" ] && [ ! -z "$2" ] && [ $2 == "nogui" ]; then
+         ssh cadelatorre@127.0.0.1 -p 2223
+       elif [ $status == "powered" ]; then
+         VBoxManage startvm $1 --type gui
+       elif [ $status == "running" ]; then
+         VBoxManage startvm $1 --type separate
        fi
-       ssh cadelatorre@127.0.0.1 -p 2223
     }
     alias trabajo='startvm AttackOfTitan'
   #}}}
