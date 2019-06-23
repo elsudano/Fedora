@@ -7,6 +7,8 @@ PROVIDERS=(#"testvelocidadeu.mismenet.net" \
 "testvelocidad.eu/speed-test" \
 "speedtest.conectabalear.com/ba/")
 
+DEBUG=0
+
 MIN=6 # minimum value for the longitude of random value of salt
 MAX=8 # maximum value for the longitude of random value of salt
 TIME_TO_MEASURE=15 # maximum timeout for taken mesaure
@@ -37,6 +39,7 @@ function average {
 
     BITS=$((($BYTES*8)/1048576))
     BYTES=$(($BYTES/1048576))
+    echo "Public IP: $(curl -s ifconfig.me)"
     echo "Average download speed: $BITS Mb/s, $BYTES MB/s"
 }
 
