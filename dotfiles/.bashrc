@@ -444,6 +444,16 @@ _isroot=false
       esac
     }
   #}}}
+  # BUSCAR IMAGES EN DIGITALOCEAN {{{
+    do_find_images() {
+      curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/images?per_page=999" \
+      | jq -r '.images[] | select(.distribution | test("'$1'")) | {Description: .description, id: .slug}'
+    }
+    do_sizes_images() {
+      curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/sizes" \
+      | jq '.sizes[] | {id: .slug, price_for_hour: .price_hourly}'
+    }
+  #}}}
   # START VMs {{{
   # This function presupose that the port 2223 is redirect to vm
     startvm() {
