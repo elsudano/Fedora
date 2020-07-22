@@ -12,7 +12,7 @@ function is_root {
 function compress() {
   tar -zcvf /home/xwiki-backup.tar.gz /opt/xwiki/
   split -b 100M /home/xwiki-backup.tar.gz "/home/xwiki-backup.part"
-  # para volver a juntar los ficheros 
+  # to join files later 
   # cat xwiki-backup.tar.gz.parta* >xwiki-backup.tar.gz
 }
 
